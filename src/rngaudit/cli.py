@@ -55,6 +55,8 @@ def _build_parser() -> argparse.ArgumentParser:
     s.add_argument("--min-rsa-bits", type=int, default=2048)
     s.add_argument("--inventory", metavar="CSV",
                    help="host,vendor,model,firmware table: links findings to device types")
+    s.add_argument("--pqc", action="store_true",
+                   help="show the post-quantum inventory and migration priorities")
     s.add_argument("-v", "--verbose", action="store_true", help="show every case and path")
 
     c = sub.add_parser(
@@ -145,8 +147,13 @@ def _cmd_scan(args: argparse.Namespace) -> int:
     lang = _language(args.lang)
     if args.format == "json":
         text = render_json(report)
+    elif args.format == "cbom":
+        from .cbom import render_cbom
+
+        text = render_cbom(report)
     elif args.format == "md":
-        text = render_markdown(report, lang=lang, max_items=10**6 if args.verbose else 20)
+        text = render_markdown(report, lang=lang, max_items=10**6 if args.verbose else 20,
+                               pqc=args.pqc)
     else:
         text = render_text(
             report,
@@ -154,6 +161,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
             lang=lang,
             color=_use_color(args.color, to_file=bool(args.output)),
             max_items=args.max_items,
+            pqc=args.pqc,
         )
     if args.output:
         Path(args.output).write_text(text, encoding="utf-8")

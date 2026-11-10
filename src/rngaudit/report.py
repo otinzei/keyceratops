@@ -112,6 +112,7 @@ def to_dict(report: Report) -> dict:
         "summary": _counts(report),
         "findings": findings,
         "associations": [a.to_dict() for a in report.associations],
+        "crypto_inventory": report.crypto.to_dict() if report.crypto else None,
         "errors": [{"source": s, "message": m} for s, m in report.errors],
     }
 
@@ -202,12 +203,45 @@ def _attribution_lines(report: Report, lang: str, p) -> list[str]:
     return out
 
 
+def _pq_lines(report: Report, lang: str, p, full: bool, root: str | None = None) -> list[str]:
+    T = UI[lang]
+    inv = report.crypto
+    if inv is None or (inv.keys == 0 and inv.endpoints == 0):
+        return []
+    if not full:
+        return [p(T["pq_hint"].format(keys=inv.keys, safe=inv.quantum_safe_keys), "dim"), ""]
+    out = [p("■ " + T["pq_title"], "bold"),
+           "  " + T["pq_summary"].format(keys=inv.keys, safe=inv.quantum_safe_keys,
+                                         certs=inv.certificates, eps=inv.endpoints,
+                                         pqeps=inv.pq_endpoints),
+           p("  " + T["pq_head"], "dim")]
+    for row in inv.algorithms:
+        b = row.info.classical_bits
+        bits = (T["pq_bits_none"] if b is None else T["pq_bits_zero"] if b == 0
+                else T["pq_bits"].format(n=b))
+        q = (T["pq_safe"].format(lvl=row.info.nist_level) if row.info.quantum_safe
+             else T["pq_broken_by_q"])
+        out.append("    - " + T["pq_row"].format(name=row.info.name, keys=row.keys, bits=bits, q=q))
+    out.append(f"  {p(T['pq_prio'], 'bold')}:")
+    for i, pr in enumerate(inv.priorities, 1):
+        if not pr.count:
+            continue
+        out.append(f"    {i}. {T['prio_' + pr.name]}: {pr.count}")
+        if pr.examples and pr.name != "broken":
+            shown = [pretty_source(x, root, lang) for x in pr.examples]
+            out.append(p(f"       {T['pq_example']}: " + ", ".join(shown), "dim"))
+    out.append(p("  " + T["pq_deadline"], "dim"))
+    out.append("")
+    return out
+
+
 def render_text(
     report: Report,
     verbose: bool = False,
     lang: str = "en",
     color: bool = False,
     max_items: int = 5,
+    pqc: bool = False,
 ) -> str:
     T = UI[lang]
     labels = SEVERITY_LABEL[lang]
@@ -273,6 +307,7 @@ def render_text(
         lines.append("")
 
     lines += _attribution_lines(report, lang, p)
+    lines += _pq_lines(report, lang, p, pqc, root)
 
     if v == "clean":
         lines.append(T["caveat"])
@@ -296,7 +331,8 @@ def render_text(
 # ---------------------------------------------------------------------------
 
 
-def render_markdown(report: Report, lang: str = "en", max_items: int = 20, **_ignored) -> str:
+def render_markdown(report: Report, lang: str = "en", max_items: int = 20, pqc: bool = False,
+                    **_ignored) -> str:
     T = UI[lang]
     labels = SEVERITY_LABEL[lang]
     st = report.stats
@@ -341,6 +377,9 @@ def render_markdown(report: Report, lang: str = "en", max_items: int = 20, **_ig
     attr = _attribution_lines(report, lang, lambda text, _style: text)
     if attr:
         out += [line.replace("■ ", "## ", 1) if line.startswith("■ ") else line for line in attr]
+    pq = _pq_lines(report, lang, lambda text, _style: text, pqc, root)
+    if pq:
+        out += [line.replace("■ ", "## ", 1) if line.startswith("■ ") else line for line in pq]
     other = [(s, m) for s, m in report.errors if "private key skipped" not in m]
     if other:
         out += [f"## {T['inputs']}", ""]
@@ -348,4 +387,4 @@ def render_markdown(report: Report, lang: str = "en", max_items: int = 20, **_ig
     return "\n".join(out).rstrip() + "\n"
 
 
-FORMATS = ("text", "json", "md")
+FORMATS = ("text", "json", "md", "cbom")

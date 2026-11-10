@@ -110,6 +110,35 @@ recognised from the public key alone. Unlike the other checks it names its
 cause: TPMs, smart cards and security tokens with that library made before the
 2017 fix.
 
+## Post-quantum inventory and CBOM (v0.5)
+
+```
+rngaudit scan certs/ lab.jsonl --pqc        # inventory + migration priorities
+rngaudit scan certs/ lab.jsonl -f cbom -o cbom.json   # CycloneDX 1.6 CBOM
+```
+
+* Every key is classified: algorithm and parameter set, classical strength
+  (NIST SP 800-57) and whether a quantum computer breaks it. ML-DSA, SLH-DSA
+  and ML-KEM keys are recognised by OID, including keys the `cryptography`
+  package cannot load yet.
+* Migration priorities, each key or endpoint counted once at its most urgent
+  level: (1) already broken (a HIGH/CRITICAL finding), (2) weak today (below
+  112-bit, or a SHA-1/MD5-signed certificate other than a self-signed root),
+  (3) quantum-vulnerable certificates valid after 2030 (NIST IR 8547
+  deprecates such algorithms after 2030 and disallows them after 2035),
+  (4) endpoints without post-quantum key exchange ("harvest now, decrypt
+  later").
+* `collect` now records each SSH server's key-exchange methods
+  (`mlkem768x25519-sha256`, `sntrup761x25519-sha512` count as post-quantum)
+  and asks TLS 1.3 servers about the hybrid groups X25519MLKEM768 and
+  SecP256r1MLKEM768. The TLS probe offers the group without a key share; a
+  server that supports it must answer with a HelloRetryRequest naming it, so
+  no ML-KEM computation is needed.
+* `-f cbom` writes algorithms, public keys (by fingerprint, with every place
+  they were seen), certificates and endpoints as CycloneDX cryptographic
+  assets, and the findings as CycloneDX vulnerabilities referencing the
+  affected keys.
+
 ## Checks
 
 | id | severity | what it means |

@@ -34,6 +34,7 @@ from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed448, ed25519, r
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 from cryptography.x509.oid import SignatureAlgorithmOID
 
+from . import pqc
 from .model import KeyRecord, SignatureRecord
 
 _PEM_BLOCK = re.compile(
@@ -63,6 +64,8 @@ class Corpus:
     files_skipped: int = 0
     # Labels per holder id ("host:<name>"), e.g. the SSH software version.
     host_info: dict[str, dict[str, str]] = field(default_factory=dict)
+    # Network endpoints seen by ``collect``: "ssh://host:22" -> what they offer.
+    endpoints: dict[str, dict] = field(default_factory=dict)
 
     def extend(self, other: "Corpus") -> None:
         self.keys.extend(other.keys)
@@ -72,6 +75,8 @@ class Corpus:
         self.files_skipped += other.files_skipped
         for h, info in other.host_info.items():
             self.host_info.setdefault(h, {}).update(info)
+        for e, info in other.endpoints.items():
+            self.endpoints.setdefault(e, {}).update(info)
 
 
 @contextmanager
@@ -96,6 +101,34 @@ def spki_fingerprint(public_key) -> str:
     return hashlib.sha256(der).hexdigest()
 
 
+def _cert_ctx(cert: x509.Certificate) -> dict:
+    with _quiet():
+        return {
+            "cert_serial": cert.serial_number,
+            "cert_issuer": cert.issuer.rfc4514_string(),
+            "cert_subject": cert.subject.rfc4514_string(),
+            "cert_not_before": cert.not_valid_before_utc.isoformat(),
+            "cert_not_after": cert.not_valid_after_utc.isoformat(),
+            "cert_fingerprint": cert.fingerprint(hashes.SHA256()).hex(),
+            "cert_sig_oid": cert.signature_algorithm_oid.dotted_string,
+        }
+
+
+def spki_record(spki_der: bytes, source: str, cert: x509.Certificate | None = None) -> KeyRecord:
+    """A record for a key known only by its DER SubjectPublicKeyInfo.
+
+    Used for algorithms the ``cryptography`` package cannot load (SLH-DSA, or
+    ML-DSA on older versions): such keys still belong in the inventory and in
+    the duplicate-key check.
+    """
+    oid = pqc.spki_algorithm_oid(spki_der)
+    family, param = pqc.family_for_oid(oid)
+    return KeyRecord(
+        source=source, algorithm=family, fingerprint=hashlib.sha256(spki_der).hexdigest(),
+        key_oid=oid, param=param, **(_cert_ctx(cert) if cert is not None else {}),
+    )
+
+
 def key_record(
     public_key,
     source: str,
@@ -103,16 +136,7 @@ def key_record(
 ) -> KeyRecord:
     """Convert a ``cryptography`` public key (plus optional cert) to a record."""
     fp = spki_fingerprint(public_key)
-    ctx: dict = {}
-    if cert is not None:
-        with _quiet():
-            ctx = {
-                "cert_serial": cert.serial_number,
-                "cert_issuer": cert.issuer.rfc4514_string(),
-                "cert_subject": cert.subject.rfc4514_string(),
-                "cert_not_before": cert.not_valid_before_utc.isoformat(),
-                "cert_fingerprint": cert.fingerprint(hashes.SHA256()).hex(),
-            }
+    ctx: dict = _cert_ctx(cert) if cert is not None else {}
 
     if isinstance(public_key, rsa.RSAPublicKey):
         nums = public_key.public_numbers()
@@ -146,7 +170,12 @@ def key_record(
             bits=public_key.key_size,
             **ctx,
         )
-    return KeyRecord(source=source, algorithm="other", fingerprint=fp, **ctx)
+    spki = public_key.public_bytes(
+        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+    oid = pqc.spki_algorithm_oid(spki)
+    family, param = pqc.family_for_oid(oid)
+    return KeyRecord(source=source, algorithm=family, fingerprint=fp, key_oid=oid,
+                     param=param, **ctx)
 
 
 def _cert_signature(cert: x509.Certificate, source: str) -> SignatureRecord | None:
@@ -175,9 +204,14 @@ def _add_cert(corpus: Corpus, cert: x509.Certificate, source: str) -> None:
     try:
         pub = cert.public_key()
     except Exception as exc:  # unsupported key type, malformed key ...
-        corpus.errors.append((source, f"certificate public key: {exc}"))
-        return
-    corpus.keys.append(key_record(pub, source, cert))
+        try:
+            corpus.keys.append(spki_record(
+                pqc.cert_spki(cert.public_bytes(serialization.Encoding.DER)), source, cert))
+        except Exception:
+            corpus.errors.append((source, f"certificate public key: {exc}"))
+            return
+    else:
+        corpus.keys.append(key_record(pub, source, cert))
     sig = _cert_signature(cert, source)
     if sig is not None:
         corpus.signatures.append(sig)
@@ -199,8 +233,17 @@ def _parse_pem(data: bytes, path: str, corpus: Corpus) -> None:
                     cert = x509.load_pem_x509_certificate(block)
                     _add_cert(corpus, cert, source)
             elif label in ("PUBLIC KEY", "RSA PUBLIC KEY"):
-                pub = serialization.load_pem_public_key(block)
-                corpus.keys.append(key_record(pub, source))
+                try:
+                    pub = serialization.load_pem_public_key(block)
+                except Exception:
+                    if label != "PUBLIC KEY":
+                        raise
+                    import base64
+
+                    der = base64.b64decode(b"".join(match.group(2).split()))
+                    corpus.keys.append(spki_record(der, source))
+                else:
+                    corpus.keys.append(key_record(pub, source))
             elif label == "CERTIFICATE REQUEST" or label == "NEW CERTIFICATE REQUEST":
                 csr = x509.load_pem_x509_csr(block)
                 corpus.keys.append(key_record(csr.public_key(), source))
@@ -414,6 +457,10 @@ def is_snapshot_header(first_line: bytes) -> bool:
     return isinstance(obj, dict) and obj.get("kind") == "meta" and obj.get("tool") == "rngaudit"
 
 
+def _endpoint(proto: str, host: str, port) -> str:
+    return f"{proto}://[{host}]:{port}" if ":" in host else f"{proto}://{host}:{port}"
+
+
 def _parse_snapshot(data: bytes, path: str, corpus: Corpus) -> None:
     """Records carry the host they came from as a ``[host]`` label, so the
     host (not the snapshot file) is the holder of a leaf certificate or SSH
@@ -453,6 +500,16 @@ def _parse_snapshot(data: bytes, path: str, corpus: Corpus) -> None:
 
                 corpus.host_info.setdefault("host:" + host, {}).update(
                     parse_ssh_banner(obj["banner"]))
+                if "kex" in obj:
+                    kex = [str(x) for x in obj["kex"]]
+                    corpus.endpoints[_endpoint("ssh", host, obj.get("port", 22))] = {
+                        "proto": "ssh", "host": host, "kex": kex,
+                        "pq_kex": any(pqc.is_pq_ssh_kex(x) for x in kex)}
+            elif kind == "tls-groups" and host:
+                groups = {str(k): bool(v) for k, v in obj.get("groups", {}).items()}
+                corpus.endpoints[_endpoint("tls", host, obj.get("port", 443))] = {
+                    "proto": "tls", "host": host, "groups": groups,
+                    "pq_kex": any(groups.values())}
             # "error" records describe the collection run, not the fleet.
         except Exception as exc:
             corpus.errors.append((loc, f"snapshot record: {exc}"))

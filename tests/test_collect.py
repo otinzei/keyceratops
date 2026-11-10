@@ -84,6 +84,7 @@ class FakeSSH:
     """
 
     VERSION = b"SSH-2.0-FakeSSH_1.0"
+    KEX = ["curve25519-sha256", "ecdh-sha2-nistp256"]
 
     def __init__(self, ecdsa_d: int, nonce: int, ed_key=None):
         self.d = ecdsa_d
@@ -150,7 +151,7 @@ class FakeSSH:
     def _handle(self, conn):
         conn.sendall(self.VERSION + b"\r\n")
         i_s = (b"\x14" + b"\x11" * 16
-               + _names(["curve25519-sha256", "ecdh-sha2-nistp256"])
+               + _names(self.KEX)
                + _names(["ecdsa-sha2-nistp256", "ssh-ed25519"])
                + _names(["aes128-ctr"]) * 2 + _names(["hmac-sha2-256"]) * 2
                + _names(["none"]) * 2 + _names([]) * 2 + b"\0" + b"\0" * 4)
@@ -388,6 +389,7 @@ def openssl_server(tmp_path):
     yield port
     proc.kill()
     proc.wait()
+    (tmp_path / "k.pem").unlink()  # pytest keeps recent tmp dirs; leave no private key
 
 
 def test_tls_collect_against_openssl(tmp_path, openssl_server):

@@ -294,3 +294,72 @@ def probe_ske(host: str, port: int, timeout: float, sni: str | None = None) -> S
     if result.signature is None:
         raise ProbeError("no ServerKeyExchange signature received")
     return result
+
+
+# --------------------------------------------------------------------------
+# TLS 1.3 key-exchange group probe (post-quantum hybrids)
+# --------------------------------------------------------------------------
+#
+# A ClientHello that lists one group in supported_groups but sends no key
+# share for it: a TLS 1.3 server that supports the group must answer with a
+# HelloRetryRequest naming it (RFC 8446 section 4.1.4); one that does not
+# supports none of our groups and aborts. No ML-KEM arithmetic is needed.
+
+# SHA-256("HelloRetryRequest"): the fixed ServerHello.random of an HRR
+HRR_RANDOM = bytes.fromhex(
+    "cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e09e2c8a8339c")
+
+
+def client_hello_13(group: int, sni: str | None) -> bytes:
+    exts = b""
+    if sni:
+        exts += _ext(0x0000, _u16(b"\x00" + _u16(sni.encode("idna"))))
+    exts += _ext(0x002B, _u8(b"\x03\x04"))  # supported_versions: TLS 1.3
+    exts += _ext(0x000A, _u16(struct.pack("!H", group)))  # supported_groups
+    exts += _ext(0x0033, _u16(b""))  # key_share: none
+    sigalgs = (0x0403, 0x0503, 0x0603, 0x0804, 0x0805, 0x0806, 0x0807, 0x0808,
+               0x0401, 0x0501, 0x0601, 0x0904, 0x0905, 0x0906)
+    exts += _ext(0x000D, _u16(b"".join(struct.pack("!H", a) for a in sigalgs)))
+    exts += _ext(0x002D, _u8(b"\x01"))  # psk_key_exchange_modes: psk_dhe_ke
+    body = (
+        b"\x03\x03" + os.urandom(32) + _u8(os.urandom(32))
+        + _u16(b"\x13\x01\x13\x02\x13\x03") + _u8(b"\x00") + _u16(exts)
+    )
+    return b"\x16\x03\x01" + _u16(b"\x01" + _u24(body))
+
+
+def probe_group(host: str, port: int, group: int, timeout: float,
+                sni: str | None = None) -> bool:
+    """True if the server negotiates ``group`` in TLS 1.3, False if it refuses.
+
+    Raises ProbeError when the answer is neither (for example a TLS 1.2-only
+    server that picks TLS 1.2).
+    """
+    with socket.create_connection((host, port), timeout=timeout) as sock:
+        sock.sendall(client_hello_13(group, sni or _sni(host)))
+        try:
+            mtype, body = next(_handshake_messages(sock))
+        except ProbeError as exc:
+            if "alert" in str(exc):
+                return False
+            raise
+    if mtype != 2:
+        raise ProbeError(f"unexpected handshake message {mtype}")
+    r = _Reader(body)
+    r.take(2)
+    random_ = r.take(32)
+    r.vec(1)  # session id
+    r.take(3)  # cipher suite, compression
+    exts = _Reader(r.vec(2)) if r.i < len(body) else _Reader(b"")
+    selected_version, selected_group = None, None
+    while exts.i < len(exts.d):
+        etype, edata = exts.int(2), exts.vec(2)
+        if etype == 0x002B and len(edata) == 2:
+            selected_version = int.from_bytes(edata, "big")
+        elif etype == 0x0033 and len(edata) >= 2:
+            selected_group = int.from_bytes(edata[:2], "big")
+    if selected_version != 0x0304:
+        raise ProbeError("server does not speak TLS 1.3")
+    if random_ == HRR_RANDOM:
+        return selected_group == group
+    raise ProbeError("server answered without a retry request")

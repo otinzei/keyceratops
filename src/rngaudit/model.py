@@ -47,6 +47,12 @@ class KeyRecord:
     cert_not_before: str | None = None
     # SHA-256 of the whole certificate (distinguishes reissues of one key)
     cert_fingerprint: str | None = None
+    cert_not_after: str | None = None
+    cert_sig_oid: str | None = None  # signature algorithm of the certificate
+    # SPKI algorithm OID; identifies keys this package has no class for
+    # (post-quantum keys in particular). ``param`` names the parameter set.
+    key_oid: str | None = None
+    param: str | None = None
 
 
 @dataclass(frozen=True)

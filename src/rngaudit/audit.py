@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 import dataclasses
 
-from . import attribute, checks, numtheory
+from . import attribute, checks, cryptoinv, numtheory
 from .ingest import Corpus
 from .model import Finding, Severity
 
@@ -17,6 +17,8 @@ class Report:
     stats: dict
     errors: list[tuple[str, str]] = field(default_factory=list)
     associations: list[attribute.Association] = field(default_factory=list)
+    crypto: cryptoinv.CryptoInventory | None = None
+    keys: list = field(default_factory=list, repr=False)  # for the CBOM view
 
     @property
     def max_severity(self) -> Severity | None:
@@ -52,6 +54,7 @@ def run_audit(
                                      inventory, cfg.holder_mode)
     attribute.annotate(findings, labels, cfg.holder_mode)
     assoc = attribute.associations(labels, attribute.affected_holders(findings, cfg.holder_mode))
+    crypto = cryptoinv.build(corpus.keys, findings, corpus.endpoints)
     for f in findings:
         f.sources = f.sources[: cfg_out.max_list]
         f.fingerprints = f.fingerprints[: cfg_out.max_list]
@@ -73,4 +76,4 @@ def run_audit(
         "labelled_holders": sum(1 for lab in labels.values() if lab),
     }
     return Report(findings=findings, stats=stats, errors=list(corpus.errors),
-                  associations=assoc)
+                  associations=assoc, crypto=crypto, keys=list(corpus.keys))
