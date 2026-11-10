@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>keyceratops</title>
 <meta name="description" content="keyceratops finds broken randomness in public keys, certificates and signatures, points to the software behind it, and inventories what a quantum computer will break.">
-<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root {
   --bg: #f5f7fb;
@@ -21,8 +22,8 @@
   --crit: #b3261e;
   --high: #c2410c;
   --med: #a16207;
-  --navy: #0f1f3d;
-  --navy-2: #172c55;
+  --navy: #19283f;
+  --navy-2: #22355a;
   --on-navy: #eef3ff;
   --on-navy-muted: #b5c3e0;
   --code-bg: #0c1730;
@@ -45,8 +46,8 @@
     --crit: #f2847b;
     --high: #f59e5b;
     --med: #e5c15a;
-    --navy: #07101f;
-    --navy-2: #0d1a33;
+    --navy: #19283f;
+    --navy-2: #22355a;
     --on-navy: #eef3ff;
     --on-navy-muted: #a9b9da;
     --code-bg: #060d1b;
@@ -59,7 +60,7 @@
   --bg: #0a1426; --surface: #101d36; --surface-2: #142443; --text: #e6ecf8;
   --muted: #9fb0d1; --line: #22355a; --accent: #8fb0ff; --accent-ink: #0a1426;
   --accent-soft: #1a2c52; --horn: #e6b54f; --crit: #f2847b; --high: #f59e5b;
-  --med: #e5c15a; --navy: #07101f; --navy-2: #0d1a33; --on-navy: #eef3ff;
+  --med: #e5c15a; --navy: #19283f; --navy-2: #22355a; --on-navy: #eef3ff;
   --on-navy-muted: #a9b9da; --code-bg: #060d1b; --code-text: #e4ebfa; --code-dim: #7d8fb6;
   --shadow: none;
 }
@@ -86,7 +87,7 @@ header.top {
 }
 .top .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--on-navy); text-decoration: none; font-size: 1.05rem; }
-.brand img { width: 34px; height: 34px; }
+.brand img { width: 34px; height: 34px; border-radius: 8px; }
 nav.links { margin-left: auto; display: flex; gap: 18px; align-items: center; }
 nav.links a { color: var(--on-navy-muted); text-decoration: none; font-size: .95rem; }
 nav.links a:hover { color: var(--on-navy); }
@@ -99,8 +100,7 @@ nav.links a:hover { color: var(--on-navy); }
 /* hero */
 .hero {
   padding: 64px 0 56px; color: var(--on-navy);
-  background: radial-gradient(1200px 500px at 85% 20%, #24448a 0%, transparent 60%),
-              linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+  background: var(--navy);
 }
 .hero .eyebrow { color: var(--horn); }
 .hero .lead, .hero .meta { color: var(--on-navy-muted); }
@@ -120,7 +120,7 @@ h1 { font-size: clamp(2.3rem, 6vw, 3.6rem); line-height: 1.05; margin: 0 0 16px;
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .btn:hover { filter: brightness(1.05); }
 .hero-art { display: flex; justify-content: center; }
-.hero-art img { width: min(320px, 80vw); height: auto; }
+.hero-art img { width: 100%; max-width: 520px; height: auto; display: block; }
 .meta { margin-top: 18px; color: var(--muted); font-size: .9rem; }
 
 /* sections */
@@ -198,7 +198,7 @@ footer .grow { flex: 1; }
 
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#"><img src="logo.svg" alt="">keyceratops</a>
+    <a class="brand" href="#"><img src="logo.png" alt="">keyceratops</a>
     <nav class="links">
       <a class="opt" href="#features">Features</a>
       <a class="opt" href="#install">Install</a>
@@ -224,7 +224,7 @@ footer .grow { flex: 1; }
       </div>
       <p class="meta">Version 1.0.0 · Python 3.10+ · MIT license</p>
     </div>
-    <div class="hero-art"><img src="logo.svg" alt="keyceratops logo: a triceratops whose frill holds a keyhole"></div>
+    <div class="hero-art"><img src="hero.jpg" width="668" height="353" alt="A white triceratops peeking out of a hole in the grass"></div>
   </div>
 </div>
 
