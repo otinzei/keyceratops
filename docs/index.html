@@ -8,50 +8,59 @@
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <style>
 :root {
-  --bg: #fbfaf6;
+  --bg: #f5f7fb;
   --surface: #ffffff;
-  --surface-2: #f2efe6;
-  --text: #1d2321;
-  --muted: #5b6561;
-  --line: #e2ddd0;
-  --accent: #2f7d5b;
+  --surface-2: #eef2f9;
+  --text: #0f1b33;
+  --muted: #4f5d78;
+  --line: #dbe2ef;
+  --accent: #1f3f8a;
   --accent-ink: #ffffff;
-  --accent-soft: #e3f1ea;
-  --horn: #c98a2b;
+  --accent-soft: #e4eaf7;
+  --horn: #d4a23a;
   --crit: #b3261e;
   --high: #c2410c;
   --med: #a16207;
-  --code-bg: #17201c;
-  --code-text: #e6efe9;
-  --code-dim: #8fa69a;
-  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
+  --navy: #0f1f3d;
+  --navy-2: #172c55;
+  --on-navy: #eef3ff;
+  --on-navy-muted: #b5c3e0;
+  --code-bg: #0c1730;
+  --code-text: #e4ebfa;
+  --code-dim: #8798bd;
+  --shadow: 0 1px 2px rgba(15,31,61,.05), 0 4px 16px rgba(15,31,61,.07);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111614;
-    --surface: #18201c;
-    --surface-2: #1e2823;
-    --text: #e7ece9;
-    --muted: #9aa8a1;
-    --line: #2b3832;
-    --accent: #5cc396;
-    --accent-ink: #0d1411;
-    --accent-soft: #1d3329;
-    --horn: #e3a94f;
+    --bg: #0a1426;
+    --surface: #101d36;
+    --surface-2: #142443;
+    --text: #e6ecf8;
+    --muted: #9fb0d1;
+    --line: #22355a;
+    --accent: #8fb0ff;
+    --accent-ink: #0a1426;
+    --accent-soft: #1a2c52;
+    --horn: #e6b54f;
     --crit: #f2847b;
     --high: #f59e5b;
     --med: #e5c15a;
-    --code-bg: #0b100e;
-    --code-text: #e6efe9;
-    --code-dim: #7f978b;
+    --navy: #07101f;
+    --navy-2: #0d1a33;
+    --on-navy: #eef3ff;
+    --on-navy-muted: #a9b9da;
+    --code-bg: #060d1b;
+    --code-text: #e4ebfa;
+    --code-dim: #7d8fb6;
     --shadow: none;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #111614; --surface: #18201c; --surface-2: #1e2823; --text: #e7ece9;
-  --muted: #9aa8a1; --line: #2b3832; --accent: #5cc396; --accent-ink: #0d1411;
-  --accent-soft: #1d3329; --horn: #e3a94f; --crit: #f2847b; --high: #f59e5b;
-  --med: #e5c15a; --code-bg: #0b100e; --code-text: #e6efe9; --code-dim: #7f978b;
+  --bg: #0a1426; --surface: #101d36; --surface-2: #142443; --text: #e6ecf8;
+  --muted: #9fb0d1; --line: #22355a; --accent: #8fb0ff; --accent-ink: #0a1426;
+  --accent-soft: #1a2c52; --horn: #e6b54f; --crit: #f2847b; --high: #f59e5b;
+  --med: #e5c15a; --navy: #07101f; --navy-2: #0d1a33; --on-navy: #eef3ff;
+  --on-navy-muted: #a9b9da; --code-bg: #060d1b; --code-text: #e4ebfa; --code-dim: #7d8fb6;
   --shadow: none;
 }
 * { box-sizing: border-box; }
@@ -76,19 +85,27 @@ header.top {
   border-bottom: 1px solid var(--line);
 }
 .top .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); text-decoration: none; font-size: 1.05rem; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--on-navy); text-decoration: none; font-size: 1.05rem; }
 .brand img { width: 34px; height: 34px; }
 nav.links { margin-left: auto; display: flex; gap: 18px; align-items: center; }
-nav.links a { color: var(--muted); text-decoration: none; font-size: .95rem; }
-nav.links a:hover { color: var(--text); }
+nav.links a { color: var(--on-navy-muted); text-decoration: none; font-size: .95rem; }
+nav.links a:hover { color: var(--on-navy); }
 .theme-btn {
-  border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  border: 1px solid rgba(255,255,255,.18); background: var(--navy-2); color: var(--on-navy);
   border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 15px;
 }
 @media (max-width: 720px) { nav.links a.opt { display: none; } }
 
 /* hero */
-.hero { padding: 64px 0 40px; }
+.hero {
+  padding: 64px 0 56px; color: var(--on-navy);
+  background: radial-gradient(1200px 500px at 85% 20%, #24448a 0%, transparent 60%),
+              linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+}
+.hero .eyebrow { color: var(--horn); }
+.hero .lead, .hero .meta { color: var(--on-navy-muted); }
+.hero .btn { background: rgba(255,255,255,.06); color: var(--on-navy); border-color: rgba(255,255,255,.22); box-shadow: none; }
+.hero .btn.primary { background: var(--horn); color: #1a1205; border-color: transparent; }
 .hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
 @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; } }
 .eyebrow { color: var(--accent); font-weight: 600; letter-spacing: .02em; font-size: .9rem; margin: 0 0 10px; }
@@ -148,17 +165,17 @@ td code { white-space: nowrap; }
   text-transform: uppercase;
 }
 .copy {
-  position: absolute; top: 10px; right: 10px; border: 1px solid #2e3b35; background: #1f2a25;
+  position: absolute; top: 10px; right: 10px; border: 1px solid #2a3c63; background: #15264a;
   color: var(--code-text); border-radius: 7px; font-size: .78rem; padding: 4px 9px; cursor: pointer;
 }
-.copy:hover { background: #2a3731; }
+.copy:hover { background: #1d3260; }
 
 .steps { counter-reset: step; display: grid; gap: 26px; }
 .step h3 { display: flex; align-items: center; gap: 10px; }
 .step h3::before {
   counter-increment: step; content: counter(step);
   display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
-  background: var(--horn); color: #1d1405; font-size: .85rem; font-weight: 700; flex: none;
+  background: var(--accent); color: var(--accent-ink); font-size: .85rem; font-weight: 700; flex: none;
 }
 .step p { margin: 0 0 12px; color: var(--muted); }
 
@@ -171,7 +188,8 @@ td code { white-space: nowrap; }
 }
 .note strong { color: var(--text); }
 
-footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--muted); font-size: .9rem; }
+footer { background: var(--navy); padding: 32px 0 48px; color: var(--on-navy-muted); font-size: .9rem; }
+footer a { color: var(--on-navy); }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
 footer .grow { flex: 1; }
 </style>
@@ -210,7 +228,7 @@ footer .grow { flex: 1; }
   </div>
 </div>
 
-<section id="features">
+<section id="features" style="border-top:0">
   <div class="wrap">
     <h2>Three horns</h2>
     <p class="sub">A random number generator that fails rarely fails loudly. It leaves quiet traces in public data: repeated primes, repeated nonces, the same key on many devices. keyceratops reads those traces.</p>
