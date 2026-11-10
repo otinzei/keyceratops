@@ -4,11 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "keyceratops"
-version = "0.6.0"
+version = "1.0.0"
 description = "Fleet-level audit of randomness failures: finds weak RNG fingerprints in public keys, certificates and signatures."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Security :: Cryptography",
+    "Programming Language :: Python :: 3",
+]
 # gmpy2 is effectively required for fleets above a few thousand RSA keys:
 # measured batch-GCD time for 5,000 moduli is 2 s with it and ~6 minutes without.
 dependencies = ["cryptography>=42", "gmpy2>=2.1"]
