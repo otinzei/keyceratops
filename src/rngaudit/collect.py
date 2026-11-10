@@ -9,6 +9,7 @@ Snapshot records (one JSON object per line)::
     {"kind": "meta", "tool": "rngaudit", "format": 1, ...}       first line
     {"kind": "cert", "host": H, "port": P, "proto": "tls", "role": "leaf"|"chain", "der": b64}
     {"kind": "sshkey", "host": H, "port": P, "key": "<type> <base64>"}
+    {"kind": "software", "host": H, "port": P, "proto": "ssh", "banner": "SSH-2.0-..."}
     {"kind": "sig", "host": H, "port": P, "proto": "tls12-ske"|"ssh-kex",
      "key_id": <SPKI SHA-256>, "r": hex, "s": hex, "z": hex|null, "curve": name}
     {"kind": "error", "host": H, "port": P, "proto": ..., "msg": text}
@@ -135,6 +136,7 @@ class SnapshotWriter:
         self.seen_chain: set[str] = set()
         self.seen_leaf: set[tuple[str, str]] = set()
         self.seen_ssh: set[tuple[str, str]] = set()
+        self.seen_sw: set[tuple[str, str]] = set()
         new = not path.exists() or path.stat().st_size == 0
         if not new:
             self._load_seen()
@@ -164,6 +166,8 @@ class SnapshotWriter:
                         self.seen_chain.add(fp)
                 elif obj.get("kind") == "sshkey":
                     self.seen_ssh.add((obj["host"], obj["key"]))
+                elif obj.get("kind") == "software":
+                    self.seen_sw.add((obj["host"], obj["banner"]))
 
     def write(self, obj: dict) -> None:
         self.fh.write(json.dumps(obj, separators=(",", ":")) + "\n")
@@ -191,6 +195,14 @@ class SnapshotWriter:
         self.write({"kind": "sshkey", "host": t.host, "port": t.port, "key": line,
                     "time": _now()})
         return True
+
+    def software(self, t: Target, banner: str) -> None:
+        """The server's identification string: the lead to *why* a key is bad."""
+        if (t.host, banner) in self.seen_sw:
+            return
+        self.seen_sw.add((t.host, banner))
+        self.write({"kind": "software", "host": t.host, "port": t.port, "proto": "ssh",
+                    "banner": banner[:255], "time": _now()})
 
     def close(self) -> None:
         self.fh.close()
@@ -249,10 +261,11 @@ def collect_tls(t: Target, w: SnapshotWriter, sm: Summary, samples: int,
 def collect_ssh(t: Target, w: SnapshotWriter, sm: Summary, samples: int,
                 timeout: float, delay: float) -> None:
     try:
-        _ver, _kex, server_hk = net_ssh.server_hostkey_algs(t.host, t.port, timeout)
+        version, _kex, server_hk = net_ssh.server_hostkey_algs(t.host, t.port, timeout)
     except (OSError, net_ssh.ProbeError) as exc:
         _err(w, sm, t, "ssh", str(exc))
         return
+    w.software(t, version)
     signing = set(net_ssh.signing_algs(server_hk))
     got_key = False
     for alg in net_ssh.distinct_hostkey_algs(server_hk):

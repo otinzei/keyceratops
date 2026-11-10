@@ -61,6 +61,8 @@ class Corpus:
     # Paths skipped because they resolve to a file that was already read
     # (symlinks, e.g. the hash-named links in /etc/ssl/certs).
     files_skipped: int = 0
+    # Labels per holder id ("host:<name>"), e.g. the SSH software version.
+    host_info: dict[str, dict[str, str]] = field(default_factory=dict)
 
     def extend(self, other: "Corpus") -> None:
         self.keys.extend(other.keys)
@@ -68,6 +70,8 @@ class Corpus:
         self.errors.extend(other.errors)
         self.files_read += other.files_read
         self.files_skipped += other.files_skipped
+        for h, info in other.host_info.items():
+            self.host_info.setdefault(h, {}).update(info)
 
 
 @contextmanager
@@ -444,6 +448,11 @@ def _parse_snapshot(data: bytes, path: str, corpus: Corpus) -> None:
                         curve=obj.get("curve"),
                     )
                 )
+            elif kind == "software" and host and obj.get("banner"):
+                from .attribute import parse_ssh_banner
+
+                corpus.host_info.setdefault("host:" + host, {}).update(
+                    parse_ssh_banner(obj["banner"]))
             # "error" records describe the collection run, not the fleet.
         except Exception as exc:
             corpus.errors.append((loc, f"snapshot record: {exc}"))

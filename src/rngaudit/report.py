@@ -111,6 +111,7 @@ def to_dict(report: Report) -> dict:
         "stats": report.stats,
         "summary": _counts(report),
         "findings": findings,
+        "associations": [a.to_dict() for a in report.associations],
         "errors": [{"source": s, "message": m} for s, m in report.errors],
     }
 
@@ -169,6 +170,36 @@ def _summary_counts(report: Report, lang: str) -> str:
 
 def _verdict_text(report: Report, lang: str) -> str:
     return UI[lang]["verdict_" + verdict(report)]
+
+
+def _software(f: Finding) -> str:
+    return ", ".join(f"{label} ×{n}" for label, n in f.data["software"].items())
+
+
+def _fmt_p(p: float) -> str:
+    return "<0.0001" if p < 1e-4 else f"{p:.2g}"
+
+
+def _attribution_lines(report: Report, lang: str, p) -> list[str]:
+    T = UI[lang]
+    labelled = report.stats.get("labelled_holders", 0)
+    if not labelled or not report.findings:
+        return []
+    out = []
+    if not report.associations:
+        out.append(p(T["attr_none"].format(n=labelled), "dim"))
+        out.append("")
+        return out
+    out.append(p("■ " + T["attr_title"], "bold"))
+    for a in report.associations:
+        row = T["attr_row"].format(label=f"{T['dim_' + a.dimension]} {a.label}", a=a.affected,
+                                   n=a.holders, ao=a.affected_other, no=a.holders_other)
+        verdict_ = T["attr_sig"] if a.significant else T["attr_weak"]
+        out.append(f"    - {row}  {p(T['attr_p'].format(p=_fmt_p(a.p_value)) + ' · ' + verdict_, 'dim')}")
+        out.append(p(f"        [{', '.join(a.checks)}]", "dim"))
+    out.append(p("  " + T["attr_note"], "dim"))
+    out.append("")
+    return out
 
 
 def render_text(
@@ -235,9 +266,13 @@ def render_text(
                 more = len(srcs) - len(shown_s)
                 extra = f" {T['more_places'].format(n=more)}" if more > 0 else ""
                 lines.append(f"         {T['where']}: " + ", ".join(shown_s) + extra)
+            if f.data.get("software"):
+                lines.append(f"         {T['software']}: " + _software(f))
         if len(g.findings) > len(shown):
             lines.append("    " + T["more_items"].format(n=len(g.findings) - len(shown)))
         lines.append("")
+
+    lines += _attribution_lines(report, lang, p)
 
     if v == "clean":
         lines.append(T["caveat"])
@@ -298,9 +333,14 @@ def render_markdown(report: Report, lang: str = "en", max_items: int = 20, **_ig
                 out.append(f"   - {T['keys']}: " + ", ".join(f"`{x[:12]}`" for x in f.fingerprints[:5]))
             if f.sources:
                 out.append(f"   - {T['where']}: " + ", ".join(f"`{pretty_source(s, root, lang)}`" for s in f.sources[:5]))
+            if f.data.get("software"):
+                out.append(f"   - {T['software']}: {_software(f)}")
         if len(g.findings) > max_items:
             out.append("   " + T["more_items"].format(n=len(g.findings) - max_items))
         out.append("")
+    attr = _attribution_lines(report, lang, lambda text, _style: text)
+    if attr:
+        out += [line.replace("■ ", "## ", 1) if line.startswith("■ ") else line for line in attr]
     other = [(s, m) for s, m in report.errors if "private key skipped" not in m]
     if other:
         out += [f"## {T['inputs']}", ""]

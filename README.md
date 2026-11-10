@@ -84,6 +84,32 @@ rngaudit scan lab.jsonl
   two hosts is a `duplicate-key` finding. One *certificate* served under
   several names (a SAN / wildcard deployment) is not.
 
+## Leads: which software or model is affected (v0.4)
+
+A finding says that keys are broken; the report also says *where to look*.
+Each holder (host, file or directory) can carry labels:
+
+* the SSH software version recorded by `collect` (`dropbear_2014.63`),
+* an inventory you supply: `rngaudit scan ... --inventory devices.csv` with a
+  header row `host,vendor,model,firmware` (`host` is a collected host name or
+  a scanned file / directory path),
+* the organisation in a self-signed certificate (device vendors put it there).
+
+For every label the report compares the share of affected holders with the
+share among all others (one-sided Fisher exact test, Bonferroni-corrected),
+and lists over-represented labels under "Leads", e.g.
+
+```
+- SSH software dropbear 2014.63: 6 of 6 affected (others: 0 of 14)  p<0.0001
+```
+
+That is a lead to investigate, not proof of a cause.
+
+New check `rsa-roca`: RSA keys made by Infineon RSALib (CVE-2017-15361) are
+recognised from the public key alone. Unlike the other checks it names its
+cause: TPMs, smart cards and security tokens with that library made before the
+2017 fix.
+
 ## Checks
 
 | id | severity | what it means |

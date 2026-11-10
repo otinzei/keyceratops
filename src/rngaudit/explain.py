@@ -61,6 +61,16 @@ UI = {
         "private_skipped": "秘密鍵ファイルは読まずにスキップ: {n}件",
         "hashed": "ホスト名ハッシュ化",
         "tip_never": "終了コードを常に0にするには --fail-on never",
+        "software": "ソフト",
+        "attr_title": "原因の手がかり（問題のあるホストに偏っているソフト・機種）",
+        "attr_row": "{label}: {a}/{n}台が該当（それ以外は {ao}/{no}台）",
+        "attr_p": "p={p}",
+        "attr_sig": "偏りは偶然では説明しにくい",
+        "attr_weak": "台数が少なく、偶然の可能性もある",
+        "attr_note": "※ 偏りは調べる手がかりで、原因の証明ではありません。",
+        "attr_none": "ソフト・機種の情報: {n}台分（偏りは見つかりませんでした）",
+        "dim_firmware": "ファームウェア", "dim_model": "機種", "dim_vendor": "メーカー",
+        "dim_software": "SSHソフト", "dim_product": "SSH製品", "dim_cert-org": "証明書の組織名",
         "c_notice": "※ 自分が管理している、または許可を得たサーバーだけを指定してください。",
         "c_target": "収集中: {label}",
         "c_done": "完了: 対象 {targets} ・ 証明書 {certs} ・ SSH鍵 {keys} ・ 署名 {sigs}（新規分） → {out}",
@@ -94,6 +104,16 @@ UI = {
         "private_skipped": "Private key files skipped unread: {n}",
         "hashed": "hashed host name",
         "tip_never": "use --fail-on never for a zero exit status",
+        "software": "software",
+        "attr_title": "Leads (software / models over-represented among affected hosts)",
+        "attr_row": "{label}: {a} of {n} affected (others: {ao} of {no})",
+        "attr_p": "p={p}",
+        "attr_sig": "unlikely to be chance",
+        "attr_weak": "few hosts; could be chance",
+        "attr_note": "Note: an over-represented label is a lead to investigate, not proof of a cause.",
+        "attr_none": "software / model labels: {n} holder(s) (no over-representation found)",
+        "dim_firmware": "firmware", "dim_model": "model", "dim_vendor": "vendor",
+        "dim_software": "SSH software", "dim_product": "SSH product", "dim_cert-org": "certificate organisation",
         "c_notice": "Only collect from servers you own or are authorised to test.",
         "c_target": "collecting: {label}",
         "c_done": "done: {targets} target(s) · {certs} certificate(s) · {keys} SSH key(s) · {sigs} signature(s) (new) -> {out}",
@@ -115,6 +135,24 @@ NOTES = {
 
 # check id -> title / meaning / advice, per language
 CHECKS: dict[str, dict[str, dict[str, str]]] = {
+    "rsa-roca": {
+        "title": {"ja": "Infineon製ライブラリの欠陥RSA鍵（ROCA）", "en": "Infineon RSALib key (ROCA)"},
+        "meaning": {
+            "ja": "Infineon の RSALib が作った鍵に特有の構造があります（CVE-2017-15361）。素数の作り方に偏りがあり、"
+                  "公開鍵だけから、同じ長さの普通の鍵よりはるかに少ない計算量で素因数分解できます。"
+                  "原因はこのライブラリを積んだTPM・ICカード・セキュリティキー（2017年の修正前のもの）です。",
+            "en": "The modulus has the structure of keys made by Infineon's RSALib (CVE-2017-15361). Its prime "
+                  "generation is biased, so the key can be factored from the public key at a cost far below a "
+                  "normal key of the same size. The cause is a TPM, smart card or security key with that library "
+                  "(made before the 2017 fix).",
+        },
+        "advice": {
+            "ja": "鍵を作った機器のファームウェアを更新するか機器を交換し、鍵を作り直して古い鍵を失効させる。"
+                  "鍵の長さを延ばすだけでは直らない。",
+            "en": "Update the firmware of (or replace) the device that generated the key, then generate a new key "
+                  "and revoke the old one. A longer key from the same library is not a fix.",
+        },
+    },
     "shared-prime": {
         "title": {"ja": "RSA鍵が素数を共有している", "en": "RSA keys share a prime factor"},
         "meaning": {
@@ -341,6 +379,9 @@ def instance_label(f: Finding, lang: str) -> str:
         if c == "rsa-close-primes":
             return (f"{d['count']}個の鍵（素数の差は約2^{d['log2_prime_distance_max']}）" if ja
                     else f"{d['count']} key(s) (prime distance about 2^{d['log2_prime_distance_max']})")
+        if c == "rsa-roca":
+            return (f"{d['count']}個の鍵（最大{d['bits_max']}ビット）" if ja
+                    else f"{d['count']} key(s) (up to {d['bits_max']}-bit)")
         if c.startswith("rsa-"):
             return f"{d['count']}個の鍵" if ja else f"{d['count']} key(s)"
         if c == "serial-collision":

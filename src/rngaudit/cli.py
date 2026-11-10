@@ -53,6 +53,8 @@ def _build_parser() -> argparse.ArgumentParser:
     s.add_argument("--fermat-iterations", type=int, default=1024,
                    help="bound for the close-prime (Fermat) test; 0 disables")
     s.add_argument("--min-rsa-bits", type=int, default=2048)
+    s.add_argument("--inventory", metavar="CSV",
+                   help="host,vendor,model,firmware table: links findings to device types")
     s.add_argument("-v", "--verbose", action="store_true", help="show every case and path")
 
     c = sub.add_parser(
@@ -129,7 +131,16 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         min_rsa_bits=args.min_rsa_bits,
         holder_mode=args.holder,
     )
-    report = run_audit(corpus, cfg)
+    inventory = None
+    if args.inventory:
+        from .attribute import load_inventory
+
+        try:
+            inventory = load_inventory(args.inventory)
+        except (OSError, ValueError, UnicodeDecodeError) as exc:
+            print(f"rngaudit: {exc}", file=sys.stderr)
+            return 2
+    report = run_audit(corpus, cfg, inventory)
 
     lang = _language(args.lang)
     if args.format == "json":

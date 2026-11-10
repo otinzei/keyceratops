@@ -110,3 +110,37 @@ def has_small_factor(n: int, limit: int = 1 << 16) -> bool:
     if n < 2:
         return False
     return gcd(n, small_primes_product(limit) % n) > 1
+
+
+# --------------------------------------------------------------------------
+# ROCA (CVE-2017-15361): Infineon RSALib primes
+# --------------------------------------------------------------------------
+#
+# RSALib drew primes of the form p = k*M + (65537^a mod M), M a primorial.
+# Then n mod r lies in the subgroup <65537> of (Z/r)* for every small prime r
+# dividing M. A random modulus passes that test for all 38 primes below with
+# probability far below 2^-100, so a pass is a fingerprint, not a guess.
+# (Nemec, Sys, Svenda, Klinec, Matyas: "The Return of Coppersmith's Attack",
+# CCS 2017.) The residue masks are derived here rather than copied.
+
+ROCA_PRIMES = (3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
+               71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139,
+               149, 151, 157, 163, 167)
+
+
+def _subgroup_mask(r: int, g: int = 65537) -> int:
+    mask, x = 0, 1
+    while True:
+        mask |= 1 << x
+        x = x * g % r
+        if x == 1:
+            return mask
+
+
+_ROCA_MASKS = tuple((r, _subgroup_mask(r)) for r in ROCA_PRIMES)
+
+
+def roca_fingerprint(n: int) -> bool:
+    """True if ``n`` has the structure of an Infineon RSALib modulus."""
+    n = int(n)
+    return all((mask >> (n % r)) & 1 for r, mask in _ROCA_MASKS)
