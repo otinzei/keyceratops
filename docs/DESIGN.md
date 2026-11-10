@@ -1,4 +1,4 @@
-# rngaudit: design notes, limits, research agenda
+# keyceratops: design notes, limits, research agenda
 
 Status: v0.1. Everything in "What exists" is implemented and tested. Everything under
 "Hypotheses" and "Roadmap" is not, and is labelled as such.
@@ -20,7 +20,7 @@ Prior work established all of this on the public Internet (Heninger et al., *Min
 your Ps and Qs*, 2012; Lenstra et al., *Ron was wrong, Whit is right*, 2012; Bernstein
 et al., smart-card RSA keys, 2013; Breitner and Heninger on biased ECDSA nonces in
 cryptocurrencies, 2019). Those were one-off measurement studies by researchers. The
-gap `rngaudit` addresses is the other direction: an operator running the same analysis
+gap `keyceratops` addresses is the other direction: an operator running the same analysis
 over **their own** fleet or CA output, repeatably, with a report and a CI exit code.
 
 ## 2. What exists (v0.1)

@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>keyceratops</title>
+<meta name="description" content="keyceratops finds broken randomness in public keys, certificates and signatures, points to the software behind it, and inventories what a quantum computer will break.">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<style>
+:root {
+  --bg: #fbfaf6;
+  --surface: #ffffff;
+  --surface-2: #f2efe6;
+  --text: #1d2321;
+  --muted: #5b6561;
+  --line: #e2ddd0;
+  --accent: #2f7d5b;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3f1ea;
+  --horn: #c98a2b;
+  --crit: #b3261e;
+  --high: #c2410c;
+  --med: #a16207;
+  --code-bg: #17201c;
+  --code-text: #e6efe9;
+  --code-dim: #8fa69a;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111614;
+    --surface: #18201c;
+    --surface-2: #1e2823;
+    --text: #e7ece9;
+    --muted: #9aa8a1;
+    --line: #2b3832;
+    --accent: #5cc396;
+    --accent-ink: #0d1411;
+    --accent-soft: #1d3329;
+    --horn: #e3a94f;
+    --crit: #f2847b;
+    --high: #f59e5b;
+    --med: #e5c15a;
+    --code-bg: #0b100e;
+    --code-text: #e6efe9;
+    --code-dim: #7f978b;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111614; --surface: #18201c; --surface-2: #1e2823; --text: #e7ece9;
+  --muted: #9aa8a1; --line: #2b3832; --accent: #5cc396; --accent-ink: #0d1411;
+  --accent-soft: #1d3329; --horn: #e3a94f; --crit: #f2847b; --high: #f59e5b;
+  --med: #e5c15a; --code-bg: #0b100e; --code-text: #e6efe9; --code-dim: #7f978b;
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+code, pre, kbd { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace; }
+:not(pre) > code {
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px;
+  padding: .05em .35em; font-size: .9em;
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+/* header */
+header.top {
+  position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  border-bottom: 1px solid var(--line);
+}
+.top .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); text-decoration: none; font-size: 1.05rem; }
+.brand img { width: 34px; height: 34px; }
+nav.links { margin-left: auto; display: flex; gap: 18px; align-items: center; }
+nav.links a { color: var(--muted); text-decoration: none; font-size: .95rem; }
+nav.links a:hover { color: var(--text); }
+.theme-btn {
+  border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 15px;
+}
+@media (max-width: 720px) { nav.links a.opt { display: none; } }
+
+/* hero */
+.hero { padding: 64px 0 40px; }
+.hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+@media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; } }
+.eyebrow { color: var(--accent); font-weight: 600; letter-spacing: .02em; font-size: .9rem; margin: 0 0 10px; }
+h1 { font-size: clamp(2.3rem, 6vw, 3.6rem); line-height: 1.05; margin: 0 0 16px; letter-spacing: -.02em; }
+.lead { font-size: 1.15rem; color: var(--muted); margin: 0 0 26px; max-width: 34em; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px;
+  font-weight: 600; text-decoration: none; border: 1px solid var(--line);
+  background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+}
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.btn:hover { filter: brightness(1.05); }
+.hero-art { display: flex; justify-content: center; }
+.hero-art img { width: min(320px, 80vw); height: auto; }
+.meta { margin-top: 18px; color: var(--muted); font-size: .9rem; }
+
+/* sections */
+section { padding: 48px 0; border-top: 1px solid var(--line); }
+h2 { font-size: 1.75rem; margin: 0 0 8px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0 0 28px; max-width: 46em; }
+h3 { font-size: 1.1rem; margin: 0 0 8px; }
+
+.horns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 860px) { .horns { grid-template-columns: 1fr; } }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 22px; box-shadow: var(--shadow);
+}
+.card .num {
+  display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent); font-weight: 700; margin-bottom: 12px;
+}
+.card p { margin: 0 0 10px; color: var(--muted); }
+.card ul { margin: 0; padding-left: 18px; }
+.card li { margin: 3px 0; }
+
+/* table */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: .95rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+.sev { font-weight: 700; font-size: .8rem; letter-spacing: .03em; }
+.sev.c { color: var(--crit); } .sev.h { color: var(--high); } .sev.m { color: var(--med); }
+
+/* code */
+.code {
+  position: relative; background: var(--code-bg); color: var(--code-text); border-radius: 12px;
+  margin: 0 0 18px; border: 1px solid var(--line);
+}
+.code pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-size: .88rem; line-height: 1.6; }
+.code .c { color: var(--code-dim); }
+.code .label {
+  font-size: .75rem; color: var(--code-dim); padding: 10px 18px 0; letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.copy {
+  position: absolute; top: 10px; right: 10px; border: 1px solid #2e3b35; background: #1f2a25;
+  color: var(--code-text); border-radius: 7px; font-size: .78rem; padding: 4px 9px; cursor: pointer;
+}
+.copy:hover { background: #2a3731; }
+
+.steps { counter-reset: step; display: grid; gap: 26px; }
+.step h3 { display: flex; align-items: center; gap: 10px; }
+.step h3::before {
+  counter-increment: step; content: counter(step);
+  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--horn); color: #1d1405; font-size: .85rem; font-weight: 700; flex: none;
+}
+.step p { margin: 0 0 12px; color: var(--muted); }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+
+.note {
+  border-left: 4px solid var(--horn); background: var(--surface); padding: 14px 18px;
+  border-radius: 0 10px 10px 0; margin: 18px 0 0; color: var(--muted);
+}
+.note strong { color: var(--text); }
+
+footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--muted); font-size: .9rem; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+footer .grow { flex: 1; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#"><img src="logo.svg" alt="">keyceratops</a>
+    <nav class="links">
+      <a class="opt" href="#features">Features</a>
+      <a class="opt" href="#install">Install</a>
+      <a class="opt" href="#usage">Usage</a>
+      <a class="opt" href="#how">How it works</a>
+      <a href="https://github.com/otinzei/keyceratops">GitHub</a>
+      <button class="theme-btn" id="theme" type="button" aria-label="Toggle dark mode">◐</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Open-source key &amp; randomness auditor</p>
+      <h1>A horned guard for your keys.</h1>
+      <p class="lead">keyceratops finds broken randomness in what your devices and servers already publish (public keys, certificates and signatures), points to the software behind it, and inventories what a quantum computer will break. It never needs a private key.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/otinzei/keyceratops/releases/latest">⬇ Download</a>
+        <a class="btn" href="#install">Install with pip</a>
+        <a class="btn" href="https://github.com/otinzei/keyceratops">View source</a>
+      </div>
+      <p class="meta">Version 0.6.0 · Python 3.10+ · MIT license</p>
+    </div>
+    <div class="hero-art"><img src="logo.svg" alt="keyceratops logo: a triceratops whose frill holds a keyhole"></div>
+  </div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Three horns</h2>
+    <p class="sub">A random number generator that fails rarely fails loudly. It leaves quiet traces in public data: repeated primes, repeated nonces, the same key on many devices. keyceratops reads those traces.</p>
+    <div class="horns">
+      <div class="card">
+        <span class="num">1</span>
+        <h3>Find randomness failures</h3>
+        <p>Checks keys, certificates and signatures for the fingerprints of a bad generator.</p>
+        <ul>
+          <li>RSA keys sharing a prime (batch GCD)</li>
+          <li>ECDSA nonce reuse and bias</li>
+          <li>The same key on many devices</li>
+          <li>ROCA (Infineon) keys, broken RSA structure</li>
+          <li>Weak certificate serial numbers</li>
+          <li>SP 800-90B health tests for raw entropy</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="num">2</span>
+        <h3>Point to the cause</h3>
+        <p>Labels every host with its SSH software, firmware or device model and asks which label the affected hosts have in common.</p>
+        <ul>
+          <li>SSH version banners from <code>collect</code></li>
+          <li>Your own inventory CSV</li>
+          <li>Vendor names in self-signed certificates</li>
+          <li>Fisher exact test, Bonferroni-corrected</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="num">3</span>
+        <h3>Plan the post-quantum move</h3>
+        <p>Inventories every algorithm, its strength today and its exposure to a quantum computer.</p>
+        <ul>
+          <li>RSA, ECDSA, EdDSA, ML-DSA, SLH-DSA, ML-KEM</li>
+          <li>Migration priorities (NIST IR 8547 deadlines)</li>
+          <li>Post-quantum key exchange on TLS and SSH</li>
+          <li>CycloneDX 1.6 CBOM export</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="checks">
+  <div class="wrap">
+    <h2>What it catches</h2>
+    <p class="sub">Each finding comes with what is wrong, what to do, and where it was seen. Keys appear by fingerprint only.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Check</th><th>Severity</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><code>shared-prime</code></td><td><span class="sev c">CRITICAL</span></td><td>Two RSA keys share a prime factor: anyone can compute both private keys.</td></tr>
+          <tr><td><code>ecdsa-nonce-reuse</code></td><td><span class="sev c">CRITICAL</span></td><td>One key signed twice with the same nonce: the private key follows by algebra.</td></tr>
+          <tr><td><code>duplicate-key</code></td><td><span class="sev h">HIGH</span>–<span class="sev c">CRITICAL</span></td><td>The same key on several devices: a factory default or identical boot-time entropy.</td></tr>
+          <tr><td><code>rsa-roca</code></td><td><span class="sev h">HIGH</span>–<span class="sev c">CRITICAL</span></td><td>Key made by Infineon RSALib (CVE-2017-15361): factorable far below its nominal strength.</td></tr>
+          <tr><td><code>rsa-close-primes</code>, <code>rsa-small-factor</code>, …</td><td><span class="sev c">CRITICAL</span></td><td>Structurally broken RSA moduli (Fermat-factorable, even, square, tiny).</td></tr>
+          <tr><td><code>ecdsa-shared-r</code>, <code>ecdsa-biased-nonce</code></td><td><span class="sev h">HIGH</span></td><td>Nonces repeated across keys, or implausibly short: generators that are not independent.</td></tr>
+          <tr><td><code>serial-*</code></td><td><span class="sev m">MEDIUM</span>–<span class="sev h">HIGH</span></td><td>Certificate serials too short, sequential or colliding (CA/B Forum Ballot 164).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install</h2>
+    <p class="sub">Python 3.10 or newer. A virtual environment keeps it apart from your system Python. Dependencies: <code>cryptography</code> and <code>gmpy2</code>.</p>
+    <div class="two">
+      <div>
+        <h3>From GitHub (recommended)</h3>
+        <div class="code"><button class="copy" type="button">Copy</button><pre>python3 -m venv .venv
+. .venv/bin/activate
+pip install "keyceratops @ git+https://github.com/otinzei/keyceratops"
+keyceratops --version</pre></div>
+      </div>
+      <div>
+        <h3>From a downloaded release</h3>
+        <p class="sub" style="margin-bottom:12px">Get the <code>.whl</code> file from the <a href="https://github.com/otinzei/keyceratops/releases/latest">latest release</a>, then:</p>
+        <div class="code"><button class="copy" type="button">Copy</button><pre>pip install ./keyceratops-0.6.0-py3-none-any.whl</pre></div>
+        <p class="sub" style="margin:0">Source code: <a href="https://github.com/otinzei/keyceratops/archive/refs/heads/main.zip">download ZIP</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="usage">
+  <div class="wrap">
+    <h2>Usage</h2>
+    <p class="sub">Four commands: <code>demo</code>, <code>scan</code>, <code>collect</code> and <code>entropy</code>. Reports come in English or Japanese (<code>--lang en|ja</code>).</p>
+    <div class="steps">
+      <div class="step">
+        <h3>Try it on a synthetic fleet</h3>
+        <p>Writes a fleet of certificates and keys with planted failures (the keys are deliberately insecure) and audits it.</p>
+        <div class="code"><button class="copy" type="button">Copy</button><pre>keyceratops demo /tmp/fleet
+keyceratops scan /tmp/fleet --sigs /tmp/fleet/signatures.jsonl</pre></div>
+      </div>
+      <div class="step">
+        <h3>Audit files you already have</h3>
+        <p>PEM and DER certificates, public keys and CSRs, OpenSSH <code>known_hosts</code> and <code>authorized_keys</code>, whole directories. Private keys are recognised and skipped unread.</p>
+        <div class="code"><button class="copy" type="button">Copy</button><pre>keyceratops scan ~/.ssh/known_hosts /etc/ssl/certs
+keyceratops scan certs/ -f md -o report.md       <span class="c"># Markdown report</span>
+keyceratops scan certs/ --fail-on high           <span class="c"># exit 1 on findings: a CI gate</span></pre></div>
+      </div>
+      <div class="step">
+        <h3>Collect from your own servers</h3>
+        <p>Gathers host keys, certificate chains and fresh ECDSA signatures from TLS and SSH servers into a snapshot. More samples make nonce problems visible.</p>
+        <div class="code"><button class="copy" type="button">Copy</button><pre>keyceratops collect ssh://192.168.1.10 tls://nas.lan:8443 router.lan -n 20 -o lab.jsonl
+keyceratops scan lab.jsonl</pre></div>
+      </div>
+      <div class="step">
+        <h3>Find the cause</h3>
+        <p>Add an inventory (<code>host,vendor,model,firmware</code>) and the report lists the labels that are over-represented among affected hosts.</p>
+        <div class="code"><button class="copy" type="button">Copy</button><pre>keyceratops scan lab.jsonl --inventory devices.csv</pre></div>
+        <div class="code"><div class="label">Output</div><pre>■ Leads (software / models over-represented among affected hosts)
+    - SSH software dropbear 2014.63: 6 of 6 affected (others: 0 of 14)  p=0.0001 · unlikely to be chance
+        [shared-prime]</pre></div>
+      </div>
+      <div class="step">
+        <h3>Plan for post-quantum</h3>
+        <p>See every algorithm in use, what breaks it, and what to replace first. Export a CycloneDX 1.6 CBOM for other tools.</p>
+        <div class="code"><button class="copy" type="button">Copy</button><pre>keyceratops scan certs/ lab.jsonl --pqc
+keyceratops scan certs/ lab.jsonl -f cbom -o cbom.json</pre></div>
+        <div class="code"><div class="label">Output</div><pre>■ Post-quantum inventory
+  9 key(s) (3 quantum-safe) · 6 certificate(s) · 4 endpoint(s) (1 with post-quantum key exchange)
+    - ECDSA P-256: 3 / 128-bit / broken
+    - ML-DSA-65: 1 / 192-bit / resistant (NIST category 3)
+  Migration priorities:
+    1. already broken (see findings above): 1
+    3. quantum-vulnerable certificates valid past the end of 2030: 2
+    4. endpoints without post-quantum key exchange (recorded traffic can be decrypted later): 3</pre></div>
+      </div>
+    </div>
+    <p class="note"><strong>Only scan what you own or are authorised to test.</strong> <code>collect</code> contacts exactly the targets you name, with no address-range expansion. It stops before authentication on SSH and before key exchange completes on TLS.</p>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="sub">Every detection rests on a fact that holds for healthy keys with overwhelming probability. When it fails, the generator is to blame.</p>
+    <div class="two">
+      <div class="card">
+        <h3>Shared primes</h3>
+        <p>Independent RSA keys never share a prime. A product tree and remainder tree compute the GCD of every modulus with all others at once, so a hundred thousand keys take about a minute and a half.</p>
+      </div>
+      <div class="card">
+        <h3>Repeated nonces</h3>
+        <p>An ECDSA signature is <code>s = k⁻¹(z + r·d)</code>. Two signatures with the same <code>k</code> share <code>r</code> and give two equations in <code>d</code>. keyceratops reports this but never computes or prints the key.</p>
+      </div>
+      <div class="card">
+        <h3>Verified signatures</h3>
+        <p>Signatures collected from TLS 1.2 handshakes and SSH key exchanges are checked against the server's key before their message hash is recorded, so the evidence is the server's own.</p>
+      </div>
+      <div class="card">
+        <h3>Post-quantum probes</h3>
+        <p>To ask a TLS 1.3 server about X25519MLKEM768 it offers the group without a key share. A server that supports it must answer with a HelloRetryRequest naming it. No ML-KEM math is needed.</p>
+      </div>
+    </div>
+    <p class="note"><strong>“No problems found” is not proof of soundness.</strong> keyceratops only sees failures that leave a trace in public data. A label in “Leads” is a place to look, not proof of a cause.</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="grow">keyceratops 0.6.0 · MIT license · made by <a href="https://github.com/otinzei">otinzei</a></span>
+    <a href="https://github.com/otinzei/keyceratops">Source</a>
+    <a href="https://github.com/otinzei/keyceratops/releases">Releases</a>
+    <a href="https://github.com/otinzei/keyceratops/issues">Issues</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  try {
+    var saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") root.setAttribute("data-theme", saved);
+  } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = root.getAttribute("data-theme") === "dark" ||
+      (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var next = dark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+  });
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var pre = btn.parentElement.querySelector("pre");
+      var text = Array.prototype.map.call(pre.childNodes, function (n) {
+        return n.nodeType === 1 && n.classList.contains("c") ? "" : n.textContent;
+      }).join("").replace(/[ \t]+$/gm, "");
+      var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy"; }, 1400); };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {});
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 """Synthetic fleets with *known, planted* randomness failures.
 
-Used by the test-suite and by ``rngaudit demo`` so that every claim the tool
+Used by the test-suite and by ``keyceratops demo`` so that every claim the tool
 makes can be checked against ground truth. Everything here is deterministic
 given a seed and **not secure**: it uses ``random.Random`` and a textbook
 ECDSA with caller-chosen nonces. Never use it to generate real keys.

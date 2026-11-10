@@ -2,17 +2,17 @@
 
 import random
 
-from rngaudit import synth
-from rngaudit.audit import run_audit
-from rngaudit.checks import (
+from keyceratops import synth
+from keyceratops.audit import run_audit
+from keyceratops.checks import (
     AuditConfig,
     check_ecdsa,
     check_serials,
     holder,
 )
-from rngaudit.ingest import Corpus
-from rngaudit.model import KeyRecord, Severity, SignatureRecord
-from rngaudit.report import render_json, render_markdown, render_text
+from keyceratops.ingest import Corpus
+from keyceratops.model import KeyRecord, Severity, SignatureRecord
+from keyceratops.report import render_json, render_markdown, render_text
 
 CFG = AuditConfig()
 
@@ -118,7 +118,7 @@ def test_reports_never_contain_recovered_primes():
     rng = random.Random(11)
     p = synth.rand_prime(512, rng)
     q1, q2 = synth.rand_prime(512, rng), synth.rand_prime(512, rng)
-    from rngaudit.ingest import key_record
+    from keyceratops.ingest import key_record
     from cryptography.hazmat.primitives.asymmetric import rsa
 
     corpus = Corpus()
@@ -180,8 +180,8 @@ def test_invalid_exponent_is_high():
 def test_warns_when_large_scan_runs_without_gmpy2(monkeypatch):
     import pytest
 
-    from rngaudit import checks
-    from rngaudit import numtheory as nt
+    from keyceratops import checks
+    from keyceratops import numtheory as nt
 
     rng = random.Random(9)
     keys = [
@@ -199,7 +199,7 @@ def test_warns_when_large_scan_runs_without_gmpy2(monkeypatch):
 
 def test_rsa_exponent_findings():
     from cryptography.hazmat.primitives.asymmetric import rsa
-    from rngaudit.ingest import key_record
+    from keyceratops.ingest import key_record
 
     rng = random.Random(8)
     n = synth.rand_prime(1024, rng) * synth.rand_prime(1024, rng)

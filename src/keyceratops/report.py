@@ -105,7 +105,7 @@ def to_dict(report: Report) -> dict:
         d["advice"] = advice_en(f.check)
         findings.append(d)
     return {
-        "tool": "rngaudit",
+        "tool": "keyceratops",
         "version": __version__,
         "verdict": verdict(report),
         "stats": report.stats,

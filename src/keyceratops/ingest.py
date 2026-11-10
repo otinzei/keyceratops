@@ -7,7 +7,7 @@ Supported inputs
 * DER files: certificates or SubjectPublicKeyInfo.
 * OpenSSH public keys (``authorized_keys`` / ``known_hosts`` style lines).
 * JSON Lines of ECDSA signatures (``--sigs``).
-* Snapshots written by ``rngaudit collect`` (keys, certificates and
+* Snapshots written by ``keyceratops collect`` (keys, certificates and
   signatures gathered from TLS / SSH servers, labelled with the host).
 
 ECDSA signatures embedded in certificates are harvested too: two devices that
@@ -445,7 +445,7 @@ def load_signatures(path: str | Path) -> Corpus:
 
 
 # --------------------------------------------------------------------------
-# Snapshots from ``rngaudit collect``
+# Snapshots from ``keyceratops collect``
 # --------------------------------------------------------------------------
 
 
@@ -454,7 +454,9 @@ def is_snapshot_header(first_line: bytes) -> bool:
         obj = json.loads(first_line)
     except ValueError:
         return False
-    return isinstance(obj, dict) and obj.get("kind") == "meta" and obj.get("tool") == "rngaudit"
+    # "rngaudit" was this tool's name before v0.6; its snapshots still load.
+    return (isinstance(obj, dict) and obj.get("kind") == "meta"
+            and obj.get("tool") in ("keyceratops", "rngaudit"))
 
 
 def _endpoint(proto: str, host: str, port) -> str:

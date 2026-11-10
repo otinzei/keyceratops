@@ -5,8 +5,8 @@ import sys
 
 import pytest
 
-from rngaudit import numtheory as nt
-from rngaudit import synth
+from keyceratops import numtheory as nt
+from keyceratops import synth
 
 
 def naive(moduli):

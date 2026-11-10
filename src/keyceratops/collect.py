@@ -1,12 +1,12 @@
-"""``rngaudit collect``: gather keys, certificates and signatures from servers.
+"""``keyceratops collect``: gather keys, certificates and signatures from servers.
 
-The result is a *snapshot*: JSON Lines that ``rngaudit scan`` reads like any
+The result is a *snapshot*: JSON Lines that ``keyceratops scan`` reads like any
 other input. Snapshots can be appended to over time; more signatures per
 server make the nonce checks stronger.
 
 Snapshot records (one JSON object per line)::
 
-    {"kind": "meta", "tool": "rngaudit", "format": 1, ...}       first line
+    {"kind": "meta", "tool": "keyceratops", "format": 1, ...}       first line
     {"kind": "cert", "host": H, "port": P, "proto": "tls", "role": "leaf"|"chain", "der": b64}
     {"kind": "sshkey", "host": H, "port": P, "key": "<type> <base64>"}
     {"kind": "software", "host": H, "port": P, "proto": "ssh", "banner": "SSH-2.0-...",
@@ -145,7 +145,7 @@ class SnapshotWriter:
         self.fh = path.open("a", encoding="utf-8")
         if new:
             self.write({
-                "kind": "meta", "tool": "rngaudit", "format": SNAPSHOT_FORMAT,
+                "kind": "meta", "tool": "keyceratops", "format": SNAPSHOT_FORMAT,
                 "version": __version__,
                 "created": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             })
@@ -154,7 +154,7 @@ class SnapshotWriter:
         with self.path.open(encoding="utf-8") as fh:
             first = fh.readline()
             if not is_snapshot_header(first.encode()):
-                raise ValueError(f"{self.path} exists and is not an rngaudit snapshot")
+                raise ValueError(f"{self.path} exists and is not an keyceratops snapshot")
             for line in fh:
                 try:
                     obj = json.loads(line)

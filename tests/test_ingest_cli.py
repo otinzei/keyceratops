@@ -8,9 +8,9 @@ from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 
 from conftest import scan
-from rngaudit import synth
-from rngaudit.cli import main
-from rngaudit.ingest import load_file, load_paths, load_signatures
+from keyceratops import synth
+from keyceratops.cli import main
+from keyceratops.ingest import load_file, load_paths, load_signatures
 
 PEM, DER = serialization.Encoding.PEM, serialization.Encoding.DER
 SPKI = serialization.PublicFormat.SubjectPublicKeyInfo
@@ -134,7 +134,7 @@ def test_cli_json_and_output_file(fleet, tmp_path, capsys):
                  "-f", "json", "-o", str(out), "--fail-on", "never"])
     assert code == 0 and capsys.readouterr().out == ""
     doc = json.loads(out.read_text())
-    assert doc["tool"] == "rngaudit"
+    assert doc["tool"] == "keyceratops"
     assert doc["summary"]["CRITICAL"] >= 8
     assert all({"check", "severity", "title", "detail", "sources", "fingerprints"} <= set(f)
                for f in doc["findings"])
@@ -144,7 +144,7 @@ def test_cli_markdown_and_text(fleet, capsys):
     root, _ = fleet
     main(["scan", str(root), "-f", "md", "--fail-on", "never"])
     md = capsys.readouterr().out
-    assert md.startswith("# rngaudit") and "CRITICAL" in md and "shared-prime" in md
+    assert md.startswith("# keyceratops") and "CRITICAL" in md and "shared-prime" in md
     main(["scan", str(root / "healthy"), "--lang", "en", "--color", "never"])
     out = capsys.readouterr().out
     assert "no problems" in out.lower() and "\x1b[" not in out

@@ -4,7 +4,7 @@ import random
 
 import pytest
 
-from rngaudit import entropy as e
+from keyceratops import entropy as e
 
 
 def test_cutoffs_match_sp800_90b_table_2():

@@ -1,41 +1,75 @@
-# rngaudit
+# keyceratops
 
-Find randomness failures in what a fleet of devices already publishes: public keys,
-certificates and signatures. No access to the devices, no private keys, no network.
+**A horned guard for your keys.** keyceratops finds broken randomness in what
+devices and servers already publish (public keys, certificates and
+signatures), tells you which software or model is behind it, and inventories
+what a quantum computer will break.
 
-Weak random number generation shows up in public data long before anyone attacks it:
-two routers that generated RSA primes from the same boot-time state share a prime
-factor; a signer that repeats an ECDSA nonce leaks its key; a factory image ships one
-key to every unit. `rngaudit` looks for exactly these traces and reports them with
-severity, evidence and the affected keys.
+Homepage: https://otinzei.github.io/keyceratops/
+
+Weak random number generation shows up in public data long before anyone
+attacks it: two routers that generated RSA primes from the same boot-time state
+share a prime factor; a signer that repeats an ECDSA nonce leaks its key; a
+factory image ships one key to every unit. keyceratops looks for exactly these
+traces and reports them with severity, evidence and the affected keys. It never
+needs a private key.
+
+Three horns:
+
+1. **Randomness failures**: shared primes (batch GCD), duplicate keys, ECDSA
+   nonce reuse and bias, broken RSA structure, ROCA (Infineon) keys, weak
+   certificate serials, plus SP 800-90B health tests for raw entropy samples.
+2. **Leads**: which SSH software, firmware or device model the affected hosts
+   have in common (Fisher exact test).
+3. **Post-quantum inventory**: classical strength, quantum exposure, migration
+   priorities and a CycloneDX 1.6 CBOM.
 
 ```
-$ rngaudit demo /tmp/fleet && rngaudit scan /tmp/fleet --sigs /tmp/fleet/signatures.jsonl
-result: 9 critical, 3 high, 2 medium
+$ keyceratops demo /tmp/fleet
+$ keyceratops scan /tmp/fleet --sigs /tmp/fleet/signatures.jsonl
+Verdict: ACTION NEEDED   CRITICAL 9 · HIGH 3 · MEDIUM 2
+Start with: ecdsa-nonce-reuse (2), shared-prime (2), duplicate-key (1), rsa-close-primes (1)
 
-[CRITICAL] shared-prime: 3 RSA keys share prime factors
-[CRITICAL] ecdsa-nonce-reuse: ECDSA nonce reused under one key
-[CRITICAL] duplicate-key: One EC key is used by 12 holders
+■ CRITICAL  ECDSA nonce reused  [ecdsa-nonce-reuse] 2
 ...
 ```
 
 ## Install
 
+Python 3.10 or newer. Installing into a virtual environment is recommended.
+
 ```
-pip install -e ".[dev]"     # needs Python >= 3.10; pulls cryptography and gmpy2
-pytest                      # 68 tests, ~4 s
+python3 -m venv .venv && . .venv/bin/activate
+pip install "keyceratops @ git+https://github.com/otinzei/keyceratops"
 ```
 
-`gmpy2` is effectively required beyond a few thousand RSA keys (see Performance).
+Or download the wheel from the
+[latest release](https://github.com/otinzei/keyceratops/releases/latest) and
+`pip install keyceratops-*.whl`. Dependencies: `cryptography` and `gmpy2`
+(`gmpy2` is effectively required beyond a few thousand RSA keys; see
+Performance).
+
+Development:
+
+```
+git clone https://github.com/otinzei/keyceratops && cd keyceratops
+pip install -e ".[dev]"
+pytest
+```
+
+keyceratops was called `rngaudit` before v0.6; snapshots written under the old
+name still load.
 
 ## Usage
 
 ```
-rngaudit scan PATH... [--sigs FILE.jsonl] [-f text|json|md] [-o OUT]
+keyceratops collect TARGET... -o SNAPSHOT.jsonl [-n SAMPLES]
+keyceratops scan PATH... [--sigs FILE.jsonl] [-f text|json|md|cbom] [-o OUT]
+                      [--inventory CSV] [--pqc] [--lang auto|ja|en]
                       [--fail-on info|low|medium|high|critical|never]
                       [--holder file|dir] [--fermat-iterations N] [--min-rsa-bits N]
-rngaudit entropy FILE --bits 8 [--claim-h 7.0] [--packed] [-f text|json]
-rngaudit demo DIR        # synthetic fleet with planted failures (insecure keys!)
+keyceratops entropy FILE --bits 8 [--claim-h 7.0] [--packed] [-f text|json]
+keyceratops demo DIR        # synthetic fleet with planted failures (insecure keys!)
 ```
 
 Exit status: `0` clean, `1` findings at/above `--fail-on` (default `high`) or an
@@ -60,8 +94,8 @@ otherwise a legitimate certificate renewal in a separate file looks like a share
 ## Collecting from servers (`collect`, v0.3)
 
 ```
-rngaudit collect ssh://192.168.1.10 tls://nas.lan:8443 router.lan -n 20 -o lab.jsonl
-rngaudit scan lab.jsonl
+keyceratops collect ssh://192.168.1.10 tls://nas.lan:8443 router.lan -n 20 -o lab.jsonl
+keyceratops scan lab.jsonl
 ```
 
 * Targets: `tls://host[:port]`, `ssh://host[:port]`, or a bare host (TLS 443 and
@@ -90,7 +124,7 @@ A finding says that keys are broken; the report also says *where to look*.
 Each holder (host, file or directory) can carry labels:
 
 * the SSH software version recorded by `collect` (`dropbear_2014.63`),
-* an inventory you supply: `rngaudit scan ... --inventory devices.csv` with a
+* an inventory you supply: `keyceratops scan ... --inventory devices.csv` with a
   header row `host,vendor,model,firmware` (`host` is a collected host name or
   a scanned file / directory path),
 * the organisation in a self-signed certificate (device vendors put it there).
@@ -113,8 +147,8 @@ cause: TPMs, smart cards and security tokens with that library made before the
 ## Post-quantum inventory and CBOM (v0.5)
 
 ```
-rngaudit scan certs/ lab.jsonl --pqc        # inventory + migration priorities
-rngaudit scan certs/ lab.jsonl -f cbom -o cbom.json   # CycloneDX 1.6 CBOM
+keyceratops scan certs/ lab.jsonl --pqc        # inventory + migration priorities
+keyceratops scan certs/ lab.jsonl -f cbom -o cbom.json   # CycloneDX 1.6 CBOM
 ```
 
 * Every key is classified: algorithm and parameter set, classical strength
@@ -195,8 +229,8 @@ kept only as a fallback and warns above 1,000 moduli.
 
 ## Safety
 
-`rngaudit` only reads files you give it. The planted-failure generator in
-`rngaudit.synth` is deliberately insecure and exists for tests and demos. If you scan
+`keyceratops` only reads files you give it. The planted-failure generator in
+`keyceratops.synth` is deliberately insecure and exists for tests and demos. If you scan
 keys that are not yours, follow the disclosure norms of the affected vendors.
 
 ## License

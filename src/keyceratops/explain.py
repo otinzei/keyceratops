@@ -37,7 +37,7 @@ SEVERITY_LABEL = {
 
 UI = {
     "ja": {
-        "banner": "rngaudit {version} — 乱数不良の監査",
+        "banner": "keyceratops {version} — 乱数不良の監査",
         "scanned": "対象: {files}ファイル{skipped}・鍵 {keys}・証明書 {certs}・署名 {sigs}",
         "skipped": "（リンクなどの重複 {n} 件を除外）",
         "verdict": "判定",
@@ -90,11 +90,11 @@ UI = {
         "c_done": "完了: 対象 {targets} ・ 証明書 {certs} ・ SSH鍵 {keys} ・ 署名 {sigs}（新規分） → {out}",
         "c_unverified": "  注意: 検証できなかった署名 {n} 件（r, s のみ記録）",
         "c_errors": "取得できなかったもの:",
-        "c_next": "次:  rngaudit scan {out}",
+        "c_next": "次:  keyceratops scan {out}",
         "c_more": "ヒント: 署名は接続ごとに1つ。--samples を増やすと nonce の検査が強くなります。",
     },
     "en": {
-        "banner": "rngaudit {version} — randomness audit",
+        "banner": "keyceratops {version} — randomness audit",
         "scanned": "Scanned: {files} file(s){skipped} · {keys} key(s) · {certs} certificate(s) · {sigs} signature(s)",
         "skipped": " ({n} duplicate path(s) skipped)",
         "verdict": "Verdict",
@@ -147,7 +147,7 @@ UI = {
         "c_done": "done: {targets} target(s) · {certs} certificate(s) · {keys} SSH key(s) · {sigs} signature(s) (new) -> {out}",
         "c_unverified": "  note: {n} signature(s) did not verify (only r, s recorded)",
         "c_errors": "not collected:",
-        "c_next": "next:  rngaudit scan {out}",
+        "c_next": "next:  keyceratops scan {out}",
         "c_more": "tip: one signature per connection; raise --samples for stronger nonce checks.",
     },
 }

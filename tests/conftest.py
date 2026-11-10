@@ -1,9 +1,9 @@
 import pytest
 
-from rngaudit import synth
-from rngaudit.audit import run_audit
-from rngaudit.checks import AuditConfig
-from rngaudit.ingest import load_paths, load_signatures
+from keyceratops import synth
+from keyceratops.audit import run_audit
+from keyceratops.checks import AuditConfig
+from keyceratops.ingest import load_paths, load_signatures
 
 
 @pytest.fixture(scope="session")

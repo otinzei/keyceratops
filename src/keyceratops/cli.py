@@ -1,9 +1,9 @@
 """Command line interface.
 
-    rngaudit scan PATH... [--sigs FILE.jsonl] [--format text|json|md]
-    rngaudit entropy FILE --bits 8 [--claim-h 6.0]
-    rngaudit demo DIR            (synthetic fleet with planted failures)
-    rngaudit collect TARGET... -o SNAPSHOT.jsonl   (TLS / SSH servers)
+    keyceratops scan PATH... [--sigs FILE.jsonl] [--format text|json|md]
+    keyceratops entropy FILE --bits 8 [--claim-h 6.0]
+    keyceratops demo DIR            (synthetic fleet with planted failures)
+    keyceratops collect TARGET... -o SNAPSHOT.jsonl   (TLS / SSH servers)
 
 Exit status: 0 clean, 1 findings at or above ``--fail-on`` (scan) / unhealthy
 source (entropy), 2 usage or input error.
@@ -28,10 +28,10 @@ from .report import FORMATS, render_json, render_markdown, render_text
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="rngaudit",
+        prog="keyceratops",
         description="Find randomness failures in what a fleet of devices publishes.",
     )
-    p.add_argument("--version", action="version", version=f"rngaudit {__version__}")
+    p.add_argument("--version", action="version", version=f"keyceratops {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("scan", help="audit public keys, certificates and signatures")
@@ -114,7 +114,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         try:
             threshold = Severity.parse(args.fail_on)
         except ValueError as exc:
-            print(f"rngaudit: {exc}", file=sys.stderr)
+            print(f"keyceratops: {exc}", file=sys.stderr)
             return 2
 
     corpus: Corpus = load_paths(args.paths)
@@ -122,7 +122,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         corpus.extend(load_signatures(sig_file))
 
     if not corpus.keys and not corpus.signatures:
-        print("rngaudit: no keys, certificates or signatures found in the input",
+        print("keyceratops: no keys, certificates or signatures found in the input",
               file=sys.stderr)
         for src, msg in corpus.errors[:10]:
             print(f"  {src}: {msg}", file=sys.stderr)
@@ -140,7 +140,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         try:
             inventory = load_inventory(args.inventory)
         except (OSError, ValueError, UnicodeDecodeError) as exc:
-            print(f"rngaudit: {exc}", file=sys.stderr)
+            print(f"keyceratops: {exc}", file=sys.stderr)
             return 2
     report = run_audit(corpus, cfg, inventory)
 
@@ -178,13 +178,13 @@ def _cmd_demo(args: argparse.Namespace) -> int:
 
     out = Path(args.outdir)
     if out.exists() and any(out.iterdir()):
-        print(f"rngaudit: {out} is not empty", file=sys.stderr)
+        print(f"keyceratops: {out} is not empty", file=sys.stderr)
         return 2
     manifest = synth.build_fleet(out, seed=args.seed)
     planted = sum(len(v) for v in manifest.values())
     print(f"wrote a synthetic fleet to {out} ({planted} flawed files across "
           f"{len(manifest)} failure types; keys are NOT secure)")
-    print(f"try:  rngaudit scan {out} --sigs {out / 'signatures.jsonl'}")
+    print(f"try:  keyceratops scan {out} --sigs {out / 'signatures.jsonl'}")
     return 0
 
 
@@ -225,7 +225,7 @@ def _cmd_entropy(args: argparse.Namespace) -> int:
         samples = entropy.to_samples(data, bits, packed=args.packed)
         rep = entropy.assess(samples, bits, args.claim_h)
     except (OSError, ValueError) as exc:
-        print(f"rngaudit: {exc}", file=sys.stderr)
+        print(f"keyceratops: {exc}", file=sys.stderr)
         return 2
 
     if args.format == "json":
@@ -254,13 +254,13 @@ def _cmd_collect(args: argparse.Namespace) -> int:
             specs += collect.read_targets_file(f)
         targets = collect.expand(specs)
     except (OSError, ValueError) as exc:
-        print(f"rngaudit: {exc}", file=sys.stderr)
+        print(f"keyceratops: {exc}", file=sys.stderr)
         return 2
     if not targets:
-        print("rngaudit: no targets given", file=sys.stderr)
+        print("keyceratops: no targets given", file=sys.stderr)
         return 2
     if not 1 <= args.samples <= collect.MAX_SAMPLES:
-        print(f"rngaudit: --samples must be 1..{collect.MAX_SAMPLES}", file=sys.stderr)
+        print(f"keyceratops: --samples must be 1..{collect.MAX_SAMPLES}", file=sys.stderr)
         return 2
 
     err = sys.stderr
@@ -273,7 +273,7 @@ def _cmd_collect(args: argparse.Namespace) -> int:
         sm = collect.collect(targets, out, samples=args.samples, timeout=args.timeout,
                              delay=max(0.0, args.delay), progress=progress)
     except (OSError, ValueError) as exc:
-        print(f"rngaudit: {exc}", file=sys.stderr)
+        print(f"keyceratops: {exc}", file=sys.stderr)
         return 2
 
     print(t["c_done"].format(targets=sm.targets, certs=sm.certs, keys=sm.ssh_keys,

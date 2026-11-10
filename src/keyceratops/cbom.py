@@ -106,18 +106,18 @@ def render_cbom(report: Report, **_ignored) -> str:
             "evidence": {"occurrences": [{"location": k.source}]},
         }
         if k.cert_sig_oid:
-            comp["properties"] = [{"name": "rngaudit:signatureAlgorithmOid",
+            comp["properties"] = [{"name": "keyceratops:signatureAlgorithmOid",
                                    "value": k.cert_sig_oid}]
         components.append(comp)
 
     if report.crypto:
         for label, e in sorted(report.crypto.endpoint_detail.items()):
-            props = [{"name": "rngaudit:postQuantumKeyExchange",
+            props = [{"name": "keyceratops:postQuantumKeyExchange",
                       "value": str(bool(e.get("pq_kex"))).lower()}]
             for name, ok in sorted(e.get("groups", {}).items()):
-                props.append({"name": f"rngaudit:tlsGroup:{name}", "value": str(ok).lower()})
+                props.append({"name": f"keyceratops:tlsGroup:{name}", "value": str(ok).lower()})
             for name in e.get("kex", []):
-                props.append({"name": "rngaudit:sshKex", "value": name})
+                props.append({"name": "keyceratops:sshKex", "value": name})
             components.append({
                 "type": "cryptographic-asset",
                 "bom-ref": f"endpoint:{label}",
@@ -133,8 +133,8 @@ def render_cbom(report: Report, **_ignored) -> str:
         affects = [{"ref": f"key:{fp}"} for fp in f.fingerprints if f"key:{fp}" in refs]
         v = {
             "bom-ref": f"finding:{i}",
-            "id": f"rngaudit:{f.check}",
-            "source": {"name": "rngaudit"},
+            "id": f"keyceratops:{f.check}",
+            "source": {"name": "keyceratops"},
             "ratings": [{"severity": f.severity.name.lower(), "method": "other"}],
             "description": f"{f.title}. {f.detail}",
         }
@@ -152,7 +152,7 @@ def render_cbom(report: Report, **_ignored) -> str:
         "version": 1,
         "metadata": {
             "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-            "tools": {"components": [{"type": "application", "name": "rngaudit",
+            "tools": {"components": [{"type": "application", "name": "keyceratops",
                                       "version": __version__}]},
         },
         "components": components,

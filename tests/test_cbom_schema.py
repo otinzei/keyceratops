@@ -10,8 +10,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 
 from conftest import scan
-from rngaudit import synth
-from rngaudit.cbom import render_cbom
+from keyceratops import synth
+from keyceratops.cbom import render_cbom
 from test_pqc import _write, cert
 
 jsonschema = pytest.importorskip("jsonschema")
@@ -39,7 +39,7 @@ def _errors(bom):
 
 
 def _snapshot(path, records):
-    lines = [{"kind": "meta", "tool": "rngaudit", "format": 1}] + records
+    lines = [{"kind": "meta", "tool": "keyceratops", "format": 1}] + records
     path.write_text("".join(json.dumps(r) + "\n" for r in lines))
 
 

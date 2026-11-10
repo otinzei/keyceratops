@@ -11,7 +11,7 @@ import resource
 import sys
 import time
 
-from rngaudit import numtheory as nt
+from keyceratops import numtheory as nt
 
 
 def main() -> None:

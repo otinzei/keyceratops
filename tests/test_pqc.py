@@ -14,11 +14,11 @@ from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 from cryptography.x509.oid import NameOID
 
 from conftest import scan
-from rngaudit import collect, cryptoinv, pqc, synth
-from rngaudit.cli import main
-from rngaudit.ingest import load_paths
-from rngaudit.model import Finding, KeyRecord, Severity
-from rngaudit.report import render_markdown, render_text
+from keyceratops import collect, cryptoinv, pqc, synth
+from keyceratops.cli import main
+from keyceratops.ingest import load_paths
+from keyceratops.model import Finding, KeyRecord, Severity
+from keyceratops.report import render_markdown, render_text
 from test_collect import FakeSSH
 
 PEM, DER = serialization.Encoding.PEM, serialization.Encoding.DER
@@ -283,7 +283,7 @@ def test_cbom(tmp_path):
     assert {v["ratings"][0]["severity"] for v in vulns} <= {
         "critical", "high", "medium", "low", "info", "none", "unknown"}
     assert all(a["ref"] in refs for v in vulns for a in v.get("affects", []))
-    assert any(v["id"] == "rngaudit:duplicate-key" for v in vulns)
+    assert any(v["id"] == "keyceratops:duplicate-key" for v in vulns)
     # fingerprints only: no key material in the BOM
     n_hex = format(rng_key.public_key().public_numbers().n, "x")
     assert n_hex[:40] not in out.read_text()
@@ -309,7 +309,7 @@ def _one_shot_server(reply: bytes):
 
 
 def _hrr(group: int, version: int = 0x0304, random_: bytes | None = None) -> bytes:
-    from rngaudit.net_tls import HRR_RANDOM
+    from keyceratops.net_tls import HRR_RANDOM
 
     exts = (bytes.fromhex("002b0002") + version.to_bytes(2, "big")
             + bytes.fromhex("00330002") + group.to_bytes(2, "big"))
@@ -320,7 +320,7 @@ def _hrr(group: int, version: int = 0x0304, random_: bytes | None = None) -> byt
 
 
 def test_group_probe_reads_the_retry_request():
-    from rngaudit.net_tls import ProbeError, probe_group
+    from keyceratops.net_tls import ProbeError, probe_group
 
     assert probe_group("127.0.0.1", _one_shot_server(_hrr(0x11EC)), 0x11EC, 5) is True
     # a retry request for some other group is not support for ours

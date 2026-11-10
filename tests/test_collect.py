@@ -21,9 +21,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519, x25519
 
 from conftest import scan
-from rngaudit import collect, synth
-from rngaudit.cli import main
-from rngaudit.ingest import load_paths
+from keyceratops import collect, synth
+from keyceratops.cli import main
+from keyceratops.ingest import load_paths
 
 # ---- target parsing -------------------------------------------------------
 
@@ -305,7 +305,7 @@ def test_cli_collect_then_scan(tmp_path, capsys, fake_ssh):
     snap = tmp_path / "s.jsonl"
     assert main(["collect", f"ssh://127.0.0.1:{srv.port}", "-n", "2", "--delay", "0",
                  "-o", str(snap), "--lang", "en", "-q"]) == 0
-    assert "rngaudit scan" in capsys.readouterr().out
+    assert "keyceratops scan" in capsys.readouterr().out
     assert main(["scan", str(snap), "-f", "json"]) == 1  # CRITICAL >= default high
 
 
@@ -313,7 +313,7 @@ def test_cli_collect_then_scan(tmp_path, capsys, fake_ssh):
 
 
 def _snapshot(path, records):
-    lines = [{"kind": "meta", "tool": "rngaudit", "format": 1}] + records
+    lines = [{"kind": "meta", "tool": "keyceratops", "format": 1}] + records
     path.write_text("".join(json.dumps(r) + "\n" for r in lines))
 
 
@@ -407,9 +407,20 @@ def test_tls_collect_against_openssl(tmp_path, openssl_server):
 
 def test_message_hash_truncates_to_the_order():
     from cryptography.hazmat.primitives import hashes
-    from rngaudit.net_tls import message_hash
+    from keyceratops.net_tls import message_hash
 
     full = int.from_bytes(hashlib.sha384(b"m").digest(), "big")
     assert message_hash(b"m", hashes.SHA384(), 256) == full >> 128
     assert message_hash(b"m", hashes.SHA256(), 521) == int.from_bytes(
         hashlib.sha256(b"m").digest(), "big")
+
+
+def test_snapshots_from_the_old_name_still_load(tmp_path):
+    key = ec.generate_private_key(ec.SECP256R1())
+    line = key.public_key().public_bytes(serialization.Encoding.OpenSSH,
+                                         serialization.PublicFormat.OpenSSH).decode()
+    (tmp_path / "old.jsonl").write_text(
+        json.dumps({"kind": "meta", "tool": "rngaudit", "format": 1}) + "\n"
+        + json.dumps({"kind": "sshkey", "host": "h", "port": 22, "key": line}) + "\n")
+    corpus = load_paths([tmp_path])
+    assert len(corpus.keys) == 1 and corpus.errors == []

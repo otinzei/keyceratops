@@ -25,7 +25,7 @@ from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 
 from .net_tls import ProbeError, message_hash
 
-CLIENT_VERSION = b"SSH-2.0-rngaudit"
+CLIENT_VERSION = b"SSH-2.0-keyceratops"
 MAX_PACKET = 1 << 18
 
 # Key exchange methods we can complete far enough to compute H.

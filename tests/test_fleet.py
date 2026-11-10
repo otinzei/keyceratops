@@ -3,7 +3,7 @@
 from cryptography import x509
 
 from conftest import scan
-from rngaudit.model import Severity
+from keyceratops.model import Severity
 
 # manifest key -> check name that must fire
 EXPECTED = {
@@ -79,7 +79,7 @@ def test_findings_are_sorted_most_severe_first(fleet):
 def test_holder_modes(fleet):
     # With holder=dir every flawed/ file is one holder, so the 12 default keys
     # (all in flawed/) are one holder and stop being a duplicate-key finding.
-    from rngaudit.checks import AuditConfig
+    from keyceratops.checks import AuditConfig
 
     root, _ = fleet
     report = scan([root / "flawed"], cfg=AuditConfig(holder_mode="dir"))

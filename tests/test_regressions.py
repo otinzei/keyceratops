@@ -12,11 +12,11 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519, ec
 
 from conftest import scan
-from rngaudit import synth
-from rngaudit.checks import AuditConfig, check_serials
-from rngaudit.ingest import Corpus, load_paths
-from rngaudit.audit import run_audit
-from rngaudit.model import KeyRecord, Severity
+from keyceratops import synth
+from keyceratops.checks import AuditConfig, check_serials
+from keyceratops.ingest import Corpus, load_paths
+from keyceratops.audit import run_audit
+from keyceratops.model import KeyRecord, Severity
 
 PEM = serialization.Encoding.PEM
 

@@ -9,12 +9,12 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from conftest import scan
-from rngaudit import attribute, collect, numtheory, synth
-from rngaudit.audit import run_audit
-from rngaudit.checks import AuditConfig
-from rngaudit.cli import main
-from rngaudit.ingest import load_paths
-from rngaudit.report import render_markdown, render_text
+from keyceratops import attribute, collect, numtheory, synth
+from keyceratops.audit import run_audit
+from keyceratops.checks import AuditConfig
+from keyceratops.cli import main
+from keyceratops.ingest import load_paths
+from keyceratops.report import render_markdown, render_text
 from test_collect import FakeSSH
 
 CFG = AuditConfig(min_rsa_bits=1024)
@@ -118,7 +118,7 @@ def test_fisher_exact_values():
 
 
 def _snapshot(path, records):
-    lines = [{"kind": "meta", "tool": "rngaudit", "format": 1}] + records
+    lines = [{"kind": "meta", "tool": "keyceratops", "format": 1}] + records
     path.write_text("".join(json.dumps(r) + "\n" for r in lines))
 
 

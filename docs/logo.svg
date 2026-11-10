@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="keyceratops">
+  <!-- frill -->
+  <path d="M38 118 C20 72 52 26 104 24 C156 22 186 66 170 112 C150 96 128 90 104 92 C78 94 56 102 38 118 Z" fill="#2f7d5b"/>
+  <g fill="#3f9a72">
+    <circle cx="48" cy="70" r="7"/><circle cx="72" cy="42" r="7"/><circle cx="104" cy="33" r="7"/>
+    <circle cx="136" cy="40" r="7"/><circle cx="160" cy="66" r="7"/>
+  </g>
+  <!-- keyhole in the frill -->
+  <circle cx="104" cy="58" r="11" fill="#fbfaf6"/>
+  <path d="M98 64 L110 64 L113 84 L95 84 Z" fill="#fbfaf6"/>
+  <!-- brow horns -->
+  <path d="M82 104 L60 54 L94 98 Z" fill="#c98a2b"/>
+  <path d="M126 102 L150 54 L114 97 Z" fill="#c98a2b"/>
+  <!-- head -->
+  <path d="M60 112 C60 96 82 90 104 90 C128 90 150 96 150 112 C150 136 132 150 120 164 C114 172 94 172 88 164 C76 150 60 136 60 112 Z" fill="#4fae84"/>
+  <!-- nose horn -->
+  <path d="M96 150 L104 118 L112 150 Z" fill="#c98a2b"/>
+  <!-- beak -->
+  <path d="M88 160 C94 178 114 178 120 160 C112 166 96 166 88 160 Z" fill="#2f7d5b"/>
+  <!-- eyes -->
+  <circle cx="84" cy="118" r="6" fill="#17201c"/><circle cx="86" cy="116" r="2" fill="#fff"/>
+  <circle cx="124" cy="118" r="6" fill="#17201c"/><circle cx="126" cy="116" r="2" fill="#fff"/>
+</svg>
